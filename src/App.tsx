@@ -39,6 +39,15 @@ export const App: React.FC = () => {
       setUserSquad(demoSquad);
       setUserStaff(demoStaff);
       setLeagueCalendar(calendar);
+    } else if (userClub.arena?.imagePath && userClub.arena.imagePath.includes('unsplash')) {
+      // Migração automática para as imagens modernas 3D geradas por IA
+      setUserClub({
+        ...userClub,
+        arena: {
+          ...userClub.arena,
+          imagePath: '/src/assets/images/arena_elite_grand_1790774574409.jpg',
+        },
+      });
     }
   }, [userClub, setUserClub, setUserSquad, setUserStaff, setLeagueCalendar]);
 

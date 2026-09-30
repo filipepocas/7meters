@@ -402,7 +402,8 @@ export const ClubCreationWizard: React.FC<ClubCreationWizardProps> = ({ onComple
                     <img
                       src={selectedArena.imagePath}
                       alt={selectedArena.name}
-                      className="w-full h-full object-cover"
+                      referrerPolicy="no-referrer"
+                      className="w-full h-full object-cover filter brightness-105"
                     />
                     <span className="absolute top-2 left-2 bg-yellow-400 text-black px-2 py-0.5 text-xs font-black uppercase font-mono">
                       {selectedArena.tier}
@@ -455,7 +456,12 @@ export const ClubCreationWizard: React.FC<ClubCreationWizardProps> = ({ onComple
                     }`}
                   >
                     <div className="h-20 w-full overflow-hidden mb-1.5 border border-black">
-                      <img src={arena.imagePath} alt={arena.name} className="w-full h-full object-cover" />
+                      <img
+                        src={arena.imagePath}
+                        alt={arena.name}
+                        referrerPolicy="no-referrer"
+                        className="w-full h-full object-cover"
+                      />
                     </div>
                     <div className="text-[11px] font-black uppercase truncate">{arena.name}</div>
                     <div className="font-mono text-[10px] text-zinc-500 dark:text-zinc-400">

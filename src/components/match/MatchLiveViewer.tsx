@@ -213,8 +213,11 @@ export const MatchLiveViewer: React.FC<MatchLiveViewerProps> = ({
     }
   };
 
-  const homeArenaImage = homeClub.arena?.imagePath || 'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=1200';
-  const homeArenaName = homeClub.arena?.name || 'Pavilhão Central';
+  const homeArenaImage =
+    homeClub.arena?.imagePath && !homeClub.arena.imagePath.includes('unsplash')
+      ? homeClub.arena.imagePath
+      : '/src/assets/images/arena_elite_grand_1790774574409.jpg';
+  const homeArenaName = homeClub.arena?.name || 'Arena Olímpica de Andebol';
   const homeArenaCapacity = homeClub.arena?.capacity || homeClub.stadiumCapacity || 2500;
 
   const courtPlayers = homeSquad.filter((p) => courtPlayerIds.includes(p.id));
@@ -223,14 +226,15 @@ export const MatchLiveViewer: React.FC<MatchLiveViewerProps> = ({
   return (
     <div className="w-full space-y-6">
       {/* 1. PAVILHÃO DA EQUIPA DA CASA & PLACARD CENTRAL */}
-      <div className="relative border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] overflow-hidden bg-black text-white">
+      <div className="relative border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] overflow-hidden bg-zinc-950 text-white">
         <div className="h-64 md:h-84 w-full relative">
           <img
             src={homeArenaImage}
             alt={homeArenaName}
-            className="w-full h-full object-cover opacity-60"
+            referrerPolicy="no-referrer"
+            className="w-full h-full object-cover opacity-75 filter brightness-105 contrast-110"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/50 to-black/30" />
 
           {/* Badge Pavilhão */}
           <div className="absolute top-4 left-4 border-2 border-black bg-yellow-400 text-black px-3 py-1 font-mono text-xs font-black uppercase shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">

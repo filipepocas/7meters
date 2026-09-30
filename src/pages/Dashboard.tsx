@@ -98,7 +98,10 @@ export const Dashboard: React.FC = () => {
   }
 
   const arenaCap = userClub.arena?.capacity || userClub.stadiumCapacity || 2500;
-  const arenaImg = userClub.arena?.imagePath || 'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=1200';
+  const arenaImg =
+    userClub.arena?.imagePath && !userClub.arena.imagePath.includes('unsplash')
+      ? userClub.arena.imagePath
+      : '/src/assets/images/arena_champions_cup_1790774601559.jpg';
 
   return (
     <div className="min-h-screen bg-zinc-100 p-3 text-black dark:bg-zinc-950 dark:text-white md:p-6 font-sans">
@@ -274,9 +277,17 @@ export const Dashboard: React.FC = () => {
             <div className="md:col-span-2 space-y-6">
               {/* O Pavilhão do Clube com Foto Interior */}
               <div className="border-4 border-black bg-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:border-white dark:bg-zinc-900 dark:text-white overflow-hidden">
-                <div className="relative h-64 w-full">
-                  <img src={arenaImg} alt={userClub.arena.name} className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                <div className="relative h-72 w-full overflow-hidden bg-zinc-950">
+                  <img
+                    src={arenaImg}
+                    alt={userClub.arena.name}
+                    referrerPolicy="no-referrer"
+                    className="w-full h-full object-cover filter brightness-105 contrast-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/40 to-transparent" />
+                  <div className="absolute top-4 right-4 bg-black/80 backdrop-blur border border-yellow-400 text-yellow-400 px-3 py-1 font-mono text-[11px] font-black uppercase">
+                    3D Render • Vista das Bancadas
+                  </div>
                   <div className="absolute bottom-4 left-4 text-white font-mono">
                     <span className="bg-yellow-400 text-black px-2 py-0.5 text-xs font-black uppercase">
                       Pavilhão Oficial

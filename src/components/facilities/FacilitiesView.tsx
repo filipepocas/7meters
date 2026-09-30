@@ -232,19 +232,114 @@ export const FacilitiesView: React.FC = () => {
       </div>
 
       {/* SECÇÃO 3: EXPANSÃO DO PAVILHÃO DA CASA (MÓDULO 5.2) */}
-      <div className="border-4 border-black bg-white p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:border-white dark:bg-zinc-900 dark:text-white space-y-4">
-        <h3 className="text-xl font-black uppercase border-b-2 border-black pb-2">
-          🏟️ O Pavilhão da Casa & Expansão de Bancadas ({userClub.arena.name})
-        </h3>
+      <div className="border-4 border-black bg-white p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:border-white dark:bg-zinc-900 dark:text-white space-y-6">
+        <div className="flex flex-wrap justify-between items-center border-b-2 border-black pb-2 gap-2">
+          <div>
+            <h3 className="text-xl font-black uppercase">
+              🏟️ O Pavilhão da Casa & Expansão de Bancadas ({userClub.arena.name})
+            </h3>
+            <p className="text-xs text-zinc-500 font-bold">
+              Vista 3D do ringue de andebol a partir das bancadas com iluminação de jogo e piso oficial.
+            </p>
+          </div>
+          <span className="bg-yellow-400 text-black px-2.5 py-1 text-xs font-black uppercase border border-black">
+            Lotação Atual: {currentCap.toLocaleString()} Lugares
+          </span>
+        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
-          <div className="relative h-44 overflow-hidden border-2 border-black">
+        {/* Galeria 3D AI de Pavilhões de Andebol (Escolha do Ringue e Bancadas) */}
+        <div>
+          <label className="block text-xs font-black uppercase mb-2 text-zinc-700 dark:text-zinc-300">
+            🎨 Escolhe o Visual 3D do teu Pavilhão (Gerado por IA • Vista das Bancadas):
+          </label>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {[
+              {
+                id: 'elite',
+                title: 'Arena de Elite Europeia',
+                subtitle: 'Bancadas elevadas e campo vibrante',
+                src: '/src/assets/images/arena_elite_grand_1790774574409.jpg',
+              },
+              {
+                id: 'urban',
+                title: 'Pavilhão Contemporâneo',
+                subtitle: 'Piso turquesa e balizas oficiais',
+                src: '/src/assets/images/arena_urban_modern_1790774588799.jpg',
+              },
+              {
+                id: 'champions',
+                title: 'Coliseu dos Campeões',
+                subtitle: 'Ecrã 360° e bancadas repletas',
+                src: '/src/assets/images/arena_champions_cup_1790774601559.jpg',
+              },
+              {
+                id: 'municipal',
+                title: 'Pavilhão Municipal Pro',
+                subtitle: 'Iluminação LED e arquibancada',
+                src: '/src/assets/images/arena_municipal_pro_1790774613164.jpg',
+              },
+            ].map((arenaOpt) => {
+              const isSelected =
+                (userClub.arena?.imagePath || '').includes(arenaOpt.id) ||
+                userClub.arena?.imagePath === arenaOpt.src;
+
+              return (
+                <div
+                  key={arenaOpt.id}
+                  onClick={() => {
+                    setUserClub({
+                      ...userClub,
+                      arena: {
+                        ...userClub.arena,
+                        imagePath: arenaOpt.src,
+                      },
+                    });
+                    setFeedback(`Pavilhão atualizado com o visual 3D: ${arenaOpt.title}!`);
+                  }}
+                  className={`border-3 cursor-pointer overflow-hidden transition-all ${
+                    isSelected
+                      ? 'border-yellow-400 ring-2 ring-yellow-400 scale-[1.02]'
+                      : 'border-black hover:border-yellow-400 dark:border-white'
+                  }`}
+                >
+                  <div className="relative h-28 w-full bg-zinc-950">
+                    <img
+                      src={arenaOpt.src}
+                      alt={arenaOpt.title}
+                      referrerPolicy="no-referrer"
+                      className="w-full h-full object-cover"
+                    />
+                    {isSelected && (
+                      <span className="absolute top-1 right-1 bg-yellow-400 text-black px-1.5 py-0.5 text-[9px] font-black uppercase">
+                        SELECIONADO
+                      </span>
+                    )}
+                  </div>
+                  <div className="p-2 bg-zinc-100 dark:bg-zinc-800 text-left">
+                    <div className="text-[11px] font-black uppercase truncate">{arenaOpt.title}</div>
+                    <div className="text-[9px] text-zinc-500 truncate">{arenaOpt.subtitle}</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Obras de Expansão */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center pt-2">
+          <div className="relative h-56 overflow-hidden border-2 border-black bg-zinc-950">
             <img
-              src={userClub.arena.imagePath}
+              src={
+                userClub.arena.imagePath && !userClub.arena.imagePath.includes('unsplash')
+                  ? userClub.arena.imagePath
+                  : '/src/assets/images/arena_elite_grand_1790774574409.jpg'
+              }
               alt={userClub.arena.name}
-              className="w-full h-full object-cover"
+              referrerPolicy="no-referrer"
+              className="w-full h-full object-cover filter brightness-105"
             />
-            <span className="absolute bottom-2 left-2 bg-black text-yellow-400 px-2 py-0.5 text-xs font-black uppercase">
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+            <span className="absolute bottom-2 left-2 bg-black/90 text-yellow-400 px-2 py-0.5 text-xs font-black uppercase border border-yellow-400">
               Lotação: {currentCap.toLocaleString()} Lugares
             </span>
           </div>

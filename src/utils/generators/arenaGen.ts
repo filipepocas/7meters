@@ -7,18 +7,12 @@
 
 import { ArenaInfo } from '../../types/club.types';
 
-// Curated high quality interior sports arenas and handball stadiums
+// AI-Generated 3D Stylized Modern Indoor Handball Arenas (view from spectator stands)
 const ARENA_IMAGES_POOL = [
-  'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=1200&auto=format&fit=crop&q=80', // Modern multi-tier arena
-  'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=1200&auto=format&fit=crop&q=80', // Polished wooden parquet court
-  'https://images.unsplash.com/photo-1519766304817-4f37bda74a29?w=1200&auto=format&fit=crop&q=80', // Grand arena with stands
-  'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1200&auto=format&fit=crop&q=80', // Stadium lights & court
-  'https://images.unsplash.com/photo-1577416412292-747c6607f055?w=1200&auto=format&fit=crop&q=80', // Indoor court wooden floor
-  'https://images.unsplash.com/photo-1504450758481-7338eba7524a?w=1200&auto=format&fit=crop&q=80', // Indoor basketball/handball stadium
-  'https://images.unsplash.com/photo-1587329310686-91414b8e3cb7?w=1200&auto=format&fit=crop&q=80', // Blue sports court with grandstand
-  'https://images.unsplash.com/photo-1516796181074-bf453fbfa3e6?w=1200&auto=format&fit=crop&q=80', // High-tech arena with spotlights
-  'https://images.unsplash.com/photo-1517649763962-0c623266ddc0?w=1200&auto=format&fit=crop&q=80', // Sports hall
-  'https://images.unsplash.com/photo-1562077772-3ab12182c0fa?w=1200&auto=format&fit=crop&q=80', // Arena seats and court
+  '/src/assets/images/arena_elite_grand_1790774574409.jpg',     // Arena de Elite com bancadas elevadas e campo vibrante
+  '/src/assets/images/arena_urban_modern_1790774588799.jpg',    // Pavilhão contemporâneo com piso azul/turquesa e balizas oficiais
+  '/src/assets/images/arena_champions_cup_1790774601559.jpg',   // Arena Europeia de Campeões com ecrã cubo 360° e bancadas lotadas
+  '/src/assets/images/arena_municipal_pro_1790774613164.jpg',   // Pavilhão Municipal Pro com iluminação de jogo e bancadas de madeira
 ];
 
 const ARENA_PREFIXES = [
