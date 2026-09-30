@@ -3,7 +3,7 @@
  * Interface ultra-moderna, limpa e intuitiva inspirada nas melhores aplicações de desporto e gestão.
  */
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useGameStore, TrainingFocus } from '../store/useGameStore';
 import { BankLoanModal } from '../components/finance/BankLoanModal';
 import { MysterySponsorModal } from '../components/finance/MysterySponsorModal';
@@ -30,6 +30,8 @@ export const Dashboard: React.FC = () => {
   const {
     userClub,
     userSquad,
+    allClubs,
+    leagueCalendar,
     currentUser,
     currentWeek,
     currentSeason,
@@ -41,6 +43,8 @@ export const Dashboard: React.FC = () => {
     setTrainingFocus,
     advanceToNextWeek,
     logout,
+    completedMatchesHistory,
+    recordCompletedMatch,
   } = useGameStore();
 
   const [activeTab, setActiveTab] = useState<ActiveTab>('overview');
@@ -50,15 +54,30 @@ export const Dashboard: React.FC = () => {
   const [isAdminModalOpen, setIsAdminModalOpen] = useState<boolean>(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [isWizardOpen, setIsWizardOpen] = useState<boolean>(false);
-  const [completedMatches, setCompletedMatches] = useState<MatchResult[]>([]);
   const [weekNotice, setWeekNotice] = useState<string | null>(null);
 
-  // Adversário da ronda atual
-  const opponentClub = generateClubProfile('ABC de Braga', 'Andebol 1 (Divisão de Honra)', 180000, 44);
-  const opponentSquad = generateSquad(opponentClub.id, 16, 6);
+  const opponentClub = useMemo(() => {
+    const round = leagueCalendar.find((item) => item.roundNumber === currentWeek);
+    const fixture = round?.matches.find(
+      (item) =>
+        item.status === 'agendado' &&
+        (item.homeClubId === userClub?.id || item.awayClubId === userClub?.id)
+    );
+    const opponentId = fixture
+      ? fixture.homeClubId === userClub?.id
+        ? fixture.awayClubId
+        : fixture.homeClubId
+      : null;
+
+    return (
+      allClubs.find((club) => club.id === opponentId) ??
+      generateClubProfile('ABC de Braga', 'Andebol 1 (Divisão de Honra)', 180000, 44)
+    );
+  }, [allClubs, currentWeek, leagueCalendar, userClub?.id]);
+  const opponentSquad = useMemo(() => generateSquad(opponentClub.id, 16, 6), [opponentClub.id]);
 
   const handleMatchComplete = (result: MatchResult) => {
-    setCompletedMatches((prev) => [...prev, result]);
+    recordCompletedMatch(result);
   };
 
   const handleAdvanceWeek = () => {
@@ -643,7 +662,7 @@ export const Dashboard: React.FC = () => {
 
         {activeTab === 'facilities' && <FacilitiesView />}
 
-        {activeTab === 'league' && <LeagueStandings completedMatches={completedMatches} />}
+        {activeTab === 'league' && <LeagueStandings completedMatches={completedMatchesHistory} />}
       </main>
 
       {/* AVISO DE DESPEDIMENTO (GAME OVER) SE CONFIANÇA DA DIREÇÃO CHEGAR A 0% */}

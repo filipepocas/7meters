@@ -69,6 +69,7 @@ interface GameState {
   setUserClub: (club: Club) => void;
   setUserSquad: (squad: Player[]) => void;
   setUserStaff: (staff: StaffMember[]) => void;
+  setAllClubs: (clubs: Club[]) => void;
   setLeagueCalendar: (calendar: RoundFixtures[]) => void;
   upgradeArenaCapacity: (additionalSeats: number, cost: number) => boolean;
   promoteYouthPlayer: (playerId: string) => void;
@@ -87,8 +88,70 @@ interface GameState {
 
   // Avanço do Calendário
   advanceToNextWeek: () => void;
+  recordCompletedMatch: (match: MatchResult) => void;
   resetGameUniverse: () => void;
 }
+
+type SavedGameState = Pick<
+  GameState,
+  | 'currentWeek'
+  | 'currentSeason'
+  | 'currentDivision'
+  | 'currentGroup'
+  | 'boardConfidence'
+  | 'fanSatisfaction'
+  | 'trainingFocus'
+  | 'userClub'
+  | 'userSquad'
+  | 'userStaff'
+  | 'youthAcademy'
+  | 'allClubs'
+  | 'leagueCalendar'
+  | 'activeLoans'
+  | 'activeSponsors'
+  | 'onlineProposals'
+  | 'completedMatchesHistory'
+  | 'unpaidSalariesWeeks'
+>;
+
+const SAVE_VERSION = 1;
+
+function readSavedGame(): Partial<SavedGameState> {
+  try {
+    const rawSave = window.localStorage.getItem(STORAGE_KEYS.GAME_SAVE);
+    if (!rawSave) return {};
+
+    const envelope: unknown = JSON.parse(rawSave);
+    if (typeof envelope !== 'object' || envelope === null) return {};
+
+    const save = envelope as { version?: unknown; state?: unknown };
+    if (save.version !== SAVE_VERSION || typeof save.state !== 'object' || save.state === null) return {};
+
+    const state = save.state as Partial<SavedGameState>;
+    if (
+      !Number.isInteger(state.currentWeek) ||
+      !Number.isInteger(state.currentSeason) ||
+      !Array.isArray(state.userSquad) ||
+      !Array.isArray(state.userStaff) ||
+      !Array.isArray(state.youthAcademy) ||
+      !Array.isArray(state.allClubs) ||
+      !Array.isArray(state.leagueCalendar) ||
+      !Array.isArray(state.activeLoans) ||
+      !Array.isArray(state.activeSponsors) ||
+      !Array.isArray(state.onlineProposals) ||
+      !Array.isArray(state.completedMatchesHistory) ||
+      (state.userClub !== null && (typeof state.userClub !== 'object' || state.userClub === undefined))
+    ) {
+      return {};
+    }
+
+    return state;
+  } catch {
+    return {};
+  }
+}
+
+const savedGame = typeof window === 'undefined' ? {} : readSavedGame();
 
 const DEFAULT_ADMIN_RULES: AdminRule[] = [
   {
@@ -156,29 +219,29 @@ export const useGameStore = create<GameState>((set, get) => ({
     };
   })(),
 
-  currentWeek: 1,
-  currentSeason: 1,
-  currentDivision: 'Andebol 1 (Divisão de Honra)',
-  currentGroup: 'Série Norte',
-  boardConfidence: 85,
-  fanSatisfaction: 80,
-  trainingFocus: 'remate_exterior',
+  currentWeek: savedGame.currentWeek ?? 1,
+  currentSeason: savedGame.currentSeason ?? 1,
+  currentDivision: savedGame.currentDivision ?? 'Andebol 1 (Divisão de Honra)',
+  currentGroup: savedGame.currentGroup ?? 'Série Norte',
+  boardConfidence: savedGame.boardConfidence ?? 85,
+  fanSatisfaction: savedGame.fanSatisfaction ?? 80,
+  trainingFocus: savedGame.trainingFocus ?? 'remate_exterior',
 
-  userClub: null,
-  userSquad: [],
-  userStaff: [],
-  youthAcademy: [
+  userClub: savedGame.userClub ?? null,
+  userSquad: savedGame.userSquad ?? [],
+  userStaff: savedGame.userStaff ?? [],
+  youthAcademy: savedGame.youthAcademy ?? [
     generateRandomPlayer(undefined, 4, null),
     generateRandomPlayer(undefined, 5, null),
     generateRandomPlayer(undefined, 6, null),
   ],
-  allClubs: [],
-  leagueCalendar: [],
-  activeLoans: [],
-  activeSponsors: [],
-  onlineProposals: [],
-  completedMatchesHistory: [],
-  unpaidSalariesWeeks: 0,
+  allClubs: savedGame.allClubs ?? [],
+  leagueCalendar: savedGame.leagueCalendar ?? [],
+  activeLoans: savedGame.activeLoans ?? [],
+  activeSponsors: savedGame.activeSponsors ?? [],
+  onlineProposals: savedGame.onlineProposals ?? [],
+  completedMatchesHistory: savedGame.completedMatchesHistory ?? [],
+  unpaidSalariesWeeks: savedGame.unpaidSalariesWeeks ?? 0,
 
   adminRules: DEFAULT_ADMIN_RULES,
   dynamicEventsPool: [],
@@ -208,6 +271,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   setUserSquad: (squad) => set({ userSquad: squad }),
   setUserStaff: (staff) => set({ userStaff: staff }),
+  setAllClubs: (clubs) => set({ allClubs: clubs }),
   setLeagueCalendar: (calendar) => set({ leagueCalendar: calendar }),
 
   upgradeArenaCapacity: (additionalSeats, cost) => {
@@ -516,15 +580,108 @@ export const useGameStore = create<GameState>((set, get) => ({
     }
   },
 
+  recordCompletedMatch: (match) => {
+    const { completedMatchesHistory, currentWeek, leagueCalendar } = get();
+    if (completedMatchesHistory.some((savedMatch) => savedMatch.id === match.id)) return;
+
+    const round = leagueCalendar.find((item) => item.roundNumber === currentWeek);
+    const fixture = round?.matches.find(
+      (item) =>
+        item.status === 'agendado' &&
+        ((item.homeClubId === match.homeClubId && item.awayClubId === match.awayClubId) ||
+          (item.homeClubId === match.awayClubId && item.awayClubId === match.homeClubId))
+    );
+    if (!fixture) return;
+    const isHomeAndAwayAligned = fixture.homeClubId === match.homeClubId;
+
+    set({
+      completedMatchesHistory: [...completedMatchesHistory, match],
+      leagueCalendar: leagueCalendar.map((item) =>
+        item.roundNumber !== currentWeek
+          ? item
+          : {
+              ...item,
+              matches: item.matches.map((scheduledMatch) =>
+                scheduledMatch.id === fixture.id
+                  ? {
+                      ...scheduledMatch,
+                      status: 'concluido',
+                      homeScore: isHomeAndAwayAligned ? match.homeScore : match.awayScore,
+                      awayScore: isHomeAndAwayAligned ? match.awayScore : match.homeScore,
+                    }
+                  : scheduledMatch
+              ),
+            }
+      ),
+    });
+  },
+
   resetGameUniverse: () => {
-    localStorage.removeItem(STORAGE_KEYS.CLUB_STATE);
+    try {
+      localStorage.removeItem(STORAGE_KEYS.CLUB_STATE);
+      localStorage.removeItem(STORAGE_KEYS.GAME_SAVE);
+    } catch {}
     set({
       userClub: null,
       userSquad: [],
       userStaff: [],
+      youthAcademy: [
+        generateRandomPlayer(undefined, 4, null),
+        generateRandomPlayer(undefined, 5, null),
+        generateRandomPlayer(undefined, 6, null),
+      ],
+      allClubs: [],
+      leagueCalendar: [],
       activeLoans: [],
       activeSponsors: [],
+      onlineProposals: [],
+      completedMatchesHistory: [],
       currentWeek: 1,
+      currentSeason: 1,
+      boardConfidence: 85,
+      fanSatisfaction: 80,
+      unpaidSalariesWeeks: 0,
     });
   },
 }));
+
+useGameStore.subscribe((state) => {
+  if (typeof window === 'undefined') return;
+
+  if (!state.userClub) {
+    try {
+      window.localStorage.removeItem(STORAGE_KEYS.GAME_SAVE);
+    } catch {}
+    return;
+  }
+
+  const savedState: SavedGameState = {
+    currentWeek: state.currentWeek,
+    currentSeason: state.currentSeason,
+    currentDivision: state.currentDivision,
+    currentGroup: state.currentGroup,
+    boardConfidence: state.boardConfidence,
+    fanSatisfaction: state.fanSatisfaction,
+    trainingFocus: state.trainingFocus,
+    userClub: state.userClub,
+    userSquad: state.userSquad,
+    userStaff: state.userStaff,
+    youthAcademy: state.youthAcademy,
+    allClubs: state.allClubs,
+    leagueCalendar: state.leagueCalendar,
+    activeLoans: state.activeLoans,
+    activeSponsors: state.activeSponsors,
+    onlineProposals: state.onlineProposals,
+    completedMatchesHistory: state.completedMatchesHistory,
+    unpaidSalariesWeeks: state.unpaidSalariesWeeks,
+  };
+
+  try {
+    window.localStorage.setItem(
+      STORAGE_KEYS.GAME_SAVE,
+      JSON.stringify({ version: SAVE_VERSION, state: savedState })
+    );
+  } catch {
+    // Browser storage limits must not interrupt a game action.
+  }
+});

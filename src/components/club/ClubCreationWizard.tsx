@@ -29,7 +29,7 @@ interface ClubCreationWizardProps {
 }
 
 export const ClubCreationWizard: React.FC<ClubCreationWizardProps> = ({ onComplete }) => {
-  const { setUserClub, setUserSquad, setUserStaff, setLeagueCalendar } = useGameStore();
+  const { setUserClub, setUserSquad, setUserStaff, setAllClubs, setLeagueCalendar } = useGameStore();
 
   const [step, setStep] = useState<number>(1);
 
@@ -153,6 +153,7 @@ export const ClubCreationWizard: React.FC<ClubCreationWizardProps> = ({ onComple
     setUserClub(finalClub);
     setUserSquad(assignedSquad);
     setUserStaff(assignedStaff);
+    setAllClubs(allLeagueClubs);
     setLeagueCalendar(calendar);
 
     try {

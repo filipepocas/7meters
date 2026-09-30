@@ -32,6 +32,7 @@ export const GAME_CONFIG = {
 export const STORAGE_KEYS = {
   AUTH_USER: "7meters_auth_user",
   CLUB_STATE: "7meters_club_state",
+  GAME_SAVE: "7meters_game_save_v1",
   CACHE_RULES: "7meters_admin_rules_cache",
 } as const;
 
