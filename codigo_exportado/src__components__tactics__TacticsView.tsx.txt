@@ -1,0 +1,211 @@
+/**
+ * 7meters - Tactics & Lineup View Component
+ * Quadro tático interativo de andebol para definição do 7 inicial,
+ * substitutos, sistema defensivo (6-0, 5-1, etc.), ritmo de ataque e agressividade.
+ */
+
+import React, { useState } from 'react';
+import { useGameStore } from '../../store/useGameStore';
+import { Player } from '../../types/player.types';
+import { TacticalSettings } from '../../engine/matchEngine';
+
+interface TacticsViewProps {
+  onSaveTactics?: (tactics: TacticalSettings, startingSevenIds: string[]) => void;
+}
+
+export const TacticsView: React.FC<TacticsViewProps> = ({ onSaveTactics }) => {
+  const { userSquad } = useGameStore();
+
+  const [tactics, setTactics] = useState<TacticalSettings>({
+    defenseSystem: '6-0',
+    attackPace: 'normal',
+    aggressiveness: 'intensa',
+  });
+
+  const [startingSeven, setStartingSeven] = useState<string[]>(() =>
+    userSquad.slice(0, 7).map((p) => p.id)
+  );
+
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+
+  const togglePlayerSelection = (playerId: string) => {
+    if (startingSeven.includes(playerId)) {
+      setStartingSeven(startingSeven.filter((id) => id !== playerId));
+    } else {
+      if (startingSeven.length >= 7) {
+        setStatusMessage('Já selecionaste o limite máximo de 7 jogadores titulares!');
+        return;
+      }
+      setStartingSeven([...startingSeven, playerId]);
+      setStatusMessage(null);
+    }
+  };
+
+  const handleSave = () => {
+    if (startingSeven.length < 7) {
+      setStatusMessage('Deves selecionar exatamente 7 jogadores para o 7 Inicial (1 GR + 6 Campo).');
+      return;
+    }
+
+    if (onSaveTactics) {
+      onSaveTactics(tactics, startingSeven);
+    }
+    setStatusMessage('Configuração tática e 7 Inicial guardados com sucesso!');
+  };
+
+  const selectedPlayers = userSquad.filter((p) => startingSeven.includes(p.id));
+  const benchedPlayers = userSquad.filter((p) => !startingSeven.includes(p.id));
+
+  return (
+    <div className="w-full space-y-6">
+      {/* Cabeçalho Brutalista */}
+      <div className="border-4 border-black bg-white p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] dark:border-white dark:bg-zinc-900 dark:text-white">
+        <h2 className="text-3xl font-black uppercase tracking-wider">
+          📋 Quadro Tático & 7 Inicial
+        </h2>
+        <p className="mt-1 text-sm font-bold text-zinc-600 dark:text-zinc-300">
+          Define o sistema de jogo, a intensidade da equipa e escolhe os 7 titulares para entrar em campo.
+        </p>
+      </div>
+
+      {statusMessage && (
+        <div className="border-4 border-black bg-yellow-300 p-4 font-black text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:border-white">
+          ⚡ {statusMessage}
+        </div>
+      )}
+
+      {/* Controlos Táticos */}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+        {/* Sistema Defensivo */}
+        <div className="border-4 border-black bg-white p-5 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:border-white dark:bg-zinc-900 dark:text-white">
+          <label className="block text-sm font-black uppercase mb-2">
+            🛡️ Sistema Defensivo
+          </label>
+          <select
+            value={tactics.defenseSystem}
+            onChange={(e) => setTactics({ ...tactics, defenseSystem: e.target.value as TacticalSettings['defenseSystem'] })}
+            className="w-full border-2 border-black p-3 font-mono font-bold dark:border-white dark:bg-zinc-800 dark:text-white"
+          >
+            <option value="6-0">6-0 (Muralha Baixa / Bloqueio Solido)</option>
+            <option value="5-1">5-1 (Avançado Agressivo no Central)</option>
+            <option value="3-2-1">3-2-1 (Pressão Alta e Interceção)</option>
+            <option value="4-2">4-2 (Anulação de Rematadores de 9m)</option>
+          </select>
+        </div>
+
+        {/* Ritmo de Ataque */}
+        <div className="border-4 border-black bg-white p-5 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:border-white dark:bg-zinc-900 dark:text-white">
+          <label className="block text-sm font-black uppercase mb-2">
+            ⚡ Ritmo de Ataque
+          </label>
+          <select
+            value={tactics.attackPace}
+            onChange={(e) => setTactics({ ...tactics, attackPace: e.target.value as TacticalSettings['attackPace'] })}
+            className="w-full border-2 border-black p-3 font-mono font-bold dark:border-white dark:bg-zinc-800 dark:text-white"
+          >
+            <option value="lento">Lento (Posicional & Ataque Longo)</option>
+            <option value="normal">Normal (Equilibrado)</option>
+            <option value="fastbreak">Fastbreak (Transição Rápida / Contra-Ataque)</option>
+          </select>
+        </div>
+
+        {/* Agressividade Defensiva */}
+        <div className="border-4 border-black bg-white p-5 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:border-white dark:bg-zinc-900 dark:text-white">
+          <label className="block text-sm font-black uppercase mb-2">
+            🥊 Agressividade
+          </label>
+          <select
+            value={tactics.aggressiveness}
+            onChange={(e) => setTactics({ ...tactics, aggressiveness: e.target.value as TacticalSettings['aggressiveness'] })}
+            className="w-full border-2 border-black p-3 font-mono font-bold dark:border-white dark:bg-zinc-800 dark:text-white"
+          >
+            <option value="moderada">Moderada (Evitar Exclusões de 2 min)</option>
+            <option value="intensa">Intensa (Contacto Forte)</option>
+            <option value="limite">Ao Limite (Pressão Total / Risco de Cartões)</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Visualização da Seleção de Plantel */}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        {/* Titulares (7 Inicial) */}
+        <div className="border-4 border-black bg-green-50 p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:border-white dark:bg-zinc-900 dark:text-white">
+          <div className="flex justify-between items-center border-b-4 border-black pb-3 mb-4 dark:border-white">
+            <h3 className="text-xl font-black uppercase">
+              🟢 7 Inicial ({startingSeven.length}/7)
+            </h3>
+            <span className="font-mono text-xs font-bold text-zinc-600 dark:text-zinc-300">
+              Clica para mover para o banco
+            </span>
+          </div>
+
+          <div className="space-y-2">
+            {selectedPlayers.map((player) => (
+              <div
+                key={player.id}
+                onClick={() => togglePlayerSelection(player.id)}
+                className="flex cursor-pointer items-center justify-between border-2 border-black bg-white p-3 font-mono hover:bg-red-100 dark:border-white dark:bg-zinc-800 dark:hover:bg-red-950"
+              >
+                <div>
+                  <span className="mr-2 inline-block rounded-none bg-black px-2 py-0.5 text-xs font-black text-white dark:bg-white dark:text-black">
+                    {player.position}
+                  </span>
+                  <span className="font-bold">{player.name}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="font-black text-blue-600 dark:text-blue-400">
+                    OVR {player.overallRating}
+                  </span>
+                  <span className="text-red-600 font-bold text-xs">❌ Remover</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Banco de Suplentes */}
+        <div className="border-4 border-black bg-white p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:border-white dark:bg-zinc-900 dark:text-white">
+          <div className="flex justify-between items-center border-b-4 border-black pb-3 mb-4 dark:border-white">
+            <h3 className="text-xl font-black uppercase">
+              🟡 Suplentes ({benchedPlayers.length})
+            </h3>
+            <span className="font-mono text-xs font-bold text-zinc-600 dark:text-zinc-300">
+              Clica para promover a titular
+            </span>
+          </div>
+
+          <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
+            {benchedPlayers.map((player) => (
+              <div
+                key={player.id}
+                onClick={() => togglePlayerSelection(player.id)}
+                className="flex cursor-pointer items-center justify-between border-2 border-black bg-zinc-50 p-3 font-mono hover:bg-green-100 dark:border-white dark:bg-zinc-800 dark:hover:bg-green-950"
+              >
+                <div>
+                  <span className="mr-2 inline-block rounded-none bg-zinc-700 px-2 py-0.5 text-xs font-black text-white">
+                    {player.position}
+                  </span>
+                  <span className="font-bold">{player.name}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="font-black text-zinc-600 dark:text-zinc-400">
+                    OVR {player.overallRating}
+                  </span>
+                  <span className="text-green-600 font-bold text-xs">➕ Adicionar</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Botão de Guardar Configuração */}
+      <button
+        onClick={handleSave}
+        className="w-full border-4 border-black bg-green-500 p-4 font-black uppercase text-xl text-white hover:bg-green-600 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] dark:border-white"
+      >
+        💾 Guardar Tática & Seleção de Plantel
+      </button>
+    </div>
+  );
+};

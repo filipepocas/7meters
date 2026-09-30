@@ -1,0 +1,178 @@
+/**
+ * 7meters - Global Game Store (Zustand)
+ * Armazém central de estado para gestão do clube, finanças, plantel,
+ * empréstimos bancários, patrocinadores mistério e agendamento de jogos online.
+ */
+
+import { create } from 'zustand';
+import { Club } from '../types/club.types';
+import { ActiveBankLoan, BankLoanOffer, FinancialHealthStatus } from '../types/finance.types';
+import { MatchResult } from '../types/match.types';
+import { MatchScheduleProposal } from '../types/onlineMatch.types';
+import { Player } from '../types/player.types';
+import { Sponsor } from '../types/sponsor.types';
+import { acceptBankLoan, generateBankLoanProposal, processWeeklyLoanPayment } from '../engine/bankEngine';
+import { RoundFixtures } from '../engine/calendarEngine';
+import { respondToMatchProposal } from '../engine/onlineEngine';
+import { confirmSponsorContract } from '../utils/generators/sponsorGen';
+
+interface GameState {
+  currentWeek: number;
+  currentSeason: number;
+  userClub: Club | null;
+  userSquad: Player[];
+  allClubs: Club[];
+  leagueCalendar: RoundFixtures[];
+  activeLoans: ActiveBankLoan[];
+  activeSponsors: Sponsor[];
+  onlineProposals: MatchScheduleProposal[];
+  completedMatchesHistory: MatchResult[];
+  unpaidSalariesWeeks: number;
+
+  // Ações de Estado
+  setUserClub: (club: Club) => void;
+  setUserSquad: (squad: Player[]) => void;
+  setLeagueCalendar: (calendar: RoundFixtures[]) => void;
+  
+  // Ações Bancárias & Financeiras
+  requestLoanQuote: (amount: number) => BankLoanOffer;
+  takeBankLoan: (offer: BankLoanOffer, amount: number) => boolean;
+  processWeeklyFinancesAndLoans: () => void;
+
+  // Ações de Patrocinadores
+  signMysterySponsor: (sponsor: Sponsor) => { injectedAmount: number };
+
+  // Ações de Agendamento Online
+  handleProposalResponse: (proposalId: string, accept: boolean, newTime?: number) => void;
+  
+  // Avanço do Calendário
+  advanceToNextWeek: () => void;
+}
+
+export const useGameStore = create<GameState>((set, get) => ({
+  currentWeek: 1,
+  currentSeason: 1,
+  userClub: null,
+  userSquad: [],
+  allClubs: [],
+  leagueCalendar: [],
+  activeLoans: [],
+  activeSponsors: [],
+  onlineProposals: [],
+  completedMatchesHistory: [],
+  unpaidSalariesWeeks: 0,
+
+  setUserClub: (club: Club) => set({ userClub: club }),
+
+  setUserSquad: (squad: Player[]) => set({ userSquad: squad }),
+
+  setLeagueCalendar: (calendar: RoundFixtures[]) => set({ leagueCalendar: calendar }),
+
+  /**
+   * Pede uma simulação de oferta de empréstimo ao banco.
+   */
+  requestLoanQuote: (amount: number) => {
+    const { userClub, userSquad } = get();
+    if (!userClub) {
+      return {
+        loanId: 'invalid',
+        maxAmountAllowed: 0,
+        interestRate: 0,
+        durationWeeks: 0,
+        weeklyPayment: 0,
+        approvalStatus: 'recusado',
+        rejectionReason: 'Nenhum clube selecionado.',
+      };
+    }
+    return generateBankLoanProposal(userClub, userSquad, amount);
+  },
+
+  /**
+   * Aceita uma proposta de empréstimo e injeta o capital na conta do clube.
+   */
+  takeBankLoan: (offer: BankLoanOffer, amount: number) => {
+    const { userClub, activeLoans } = get();
+    if (!userClub || offer.approvalStatus !== 'aprovado') return false;
+
+    const { updatedClub, newLoan } = acceptBankLoan(userClub, offer, amount);
+
+    set({
+      userClub: updatedClub,
+      activeLoans: [...activeLoans, newLoan],
+    });
+
+    return true;
+  },
+
+  /**
+   * Processa o débito semanal de amortizações de empréstimos ativos.
+   */
+  processWeeklyFinancesAndLoans: () => {
+    const { userClub, activeLoans } = get();
+    if (!userClub) return;
+
+    let currentBudget = userClub.budget;
+    const remainingLoans: ActiveBankLoan[] = [];
+
+    activeLoans.forEach((loan) => {
+      const result = processWeeklyLoanPayment({ ...userClub, budget: currentBudget }, loan);
+      currentBudget = result.updatedClub.budget;
+
+      if (result.updatedLoan.remainingAmount > 0 && result.updatedLoan.weeksRemaining > 0) {
+        remainingLoans.push(result.updatedLoan);
+      }
+    });
+
+    set({
+      userClub: { ...userClub, budget: currentBudget },
+      activeLoans: remainingLoans,
+    });
+  },
+
+  /**
+   * Assina o contrato com um patrocinador mistério e injeta o capital revelado.
+   */
+  signMysterySponsor: (sponsor: Sponsor) => {
+    const { userClub, activeSponsors } = get();
+    if (!userClub) return { injectedAmount: 0 };
+
+    const { updatedSponsor, injectedAmount, newBudget } = confirmSponsorContract(sponsor, userClub.budget);
+
+    set({
+      userClub: { ...userClub, budget: newBudget },
+      activeSponsors: [...activeSponsors, updatedSponsor],
+    });
+
+    return { injectedAmount };
+  },
+
+  /**
+   * Aceita ou recusa uma proposta de agendamento de jogo multiplayer online.
+   */
+  handleProposalResponse: (proposalId: string, accept: boolean, newTime?: number) => {
+    const { onlineProposals, userClub } = get();
+    if (!userClub) return;
+
+    const updated = onlineProposals.map((prop) => {
+      if (prop.proposalId === proposalId) {
+        return respondToMatchProposal(prop, userClub.id, accept, newTime);
+      }
+      return prop;
+    });
+
+    set({ onlineProposals: updated });
+  },
+
+  /**
+   * Avança a semana de calendário, atualiza salários, empréstimos e verifica a saúde financeira.
+   */
+  advanceToNextWeek: () => {
+    const { currentWeek, processWeeklyFinancesAndLoans } = get();
+
+    // 1. Débitos bancários e pagamentos
+    processWeeklyFinancesAndLoans();
+
+    // 2. Incrementar a semana
+    set({ currentWeek: currentWeek + 1 });
+  },
+}));

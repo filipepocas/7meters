@@ -1,0 +1,59 @@
+/**
+ * 7meters - Core Constants
+ * Configurações nucleares globais do jogo, limites do motor,
+ * orçamento base e parâmetros do sistema grátis / admin.
+ */
+
+export const GAME_CONFIG = {
+  NAME: "7meters",
+  VERSION: "1.0.0",
+  ADMIN_EMAIL: "rochap.filipe@gmail.com",
+  
+  // Limites de Atributos e Escalas
+  STATS_MIN: 1,
+  STATS_MAX: 10,
+  
+  // Finanças Iniciais
+  INITIAL_BUDGET: 1500000, // Orçamento base inicial em Euros (1.500.000 €)
+  
+  // Parâmetros do Motor de Simulação de Jogo
+  MATCH_FRAME_DURATION_MINUTES: 5, // Blocos temporais de 5 em 5 minutos (12 frames por jogo)
+  TOTAL_MATCH_MINUTES: 60,
+  GOALS_PEAK_MIN: 50,
+  GOALS_PEAK_MAX: 59,
+  
+  // Geração de Raiz e Universo do Jogo
+  INITIAL_PLAYER_AGE_MIN: 15,
+  INITIAL_PLAYER_AGE_MAX: 38, // Cobre jovens, maduros e veteranos em fim de carreira
+  TOTAL_JERSEY_COMBINATIONS: 1000, // 1000 combinações visuais de camisolas
+  TOTAL_ARENAS: 1000, // 1000 imagens/pavilhões disponíveis
+} as const;
+
+export const STORAGE_KEYS = {
+  AUTH_USER: "7meters_auth_user",
+  CLUB_STATE: "7meters_club_state",
+  CACHE_RULES: "7meters_admin_rules_cache",
+} as const;
+
+export const TACTIC_TYPES = {
+  DEFENSE: ['6:0', '5:1', '4:2', '3:3', 'Individuais'] as const,
+  OFFENSE: ['Normal', 'Contra-Ataque Rápido', '7 contra 6', 'Remate Exterior', 'Jogo com Pivô'] as const,
+} as const;
+
+export const PLAYER_POSITIONS = [
+  'Guarda-Redes',
+  'Ponta Esquerdo',
+  'Ponta Direito',
+  'Lateral Esquerdo',
+  'Lateral Direito',
+  'Central',
+  'Pivô',
+] as const;
+
+export const STAFF_ROLES = [
+  'Treinador Principal',
+  'Fisioterapeuta',
+  'Guarda-Roupa',
+  'Administrativo',
+  'Diretor Desportivo',
+] as const;

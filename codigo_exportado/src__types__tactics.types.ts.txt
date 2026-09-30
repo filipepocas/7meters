@@ -1,0 +1,35 @@
+/**
+ * 7meters - Tactics Types
+ * Tipagem estrita para esquemas táticos de defesa e ataque,
+ * instruções individuais, encaixes e transições do jogo de andebol.
+ */
+
+export type DefensiveSystem = '6:0' | '5:1' | '4:2' | '3:3' | 'Individuais';
+export type OffensiveSystem = 'Normal' | 'Contra-Ataque Rápido' | '7 contra 6' | 'Remate Exterior' | 'Jogo com Pivô';
+
+export interface DefensiveTactics {
+  system: DefensiveSystem;
+  aggressiveness: number;        // 1 a 10 (Aumenta roubos de bola, mas aumenta risco de exclusões de 2 min)
+  blockFocus: 'central' | 'pontas' | 'distancia' | 'equilibrado';
+  pressurizePlaymaker: boolean;  // Marcador individual ou pressão alta no Central adversário
+}
+
+export interface OffensiveTactics {
+  system: OffensiveSystem;
+  pace: number;                  // 1 a 10 (Velocidade de circulação da bola e transição)
+  pivotsInPlay: 1 | 2;           // Utilização de 1 ou 2 pivôs (ex: ataque em 7 contra 6)
+  focusZone: 'pistas_exteriores' | 'remate_9m' | 'linha_7m' | 'equilibrado';
+  firstWaveFastBreak: boolean;   // Saída rápida de 1ª vaga pelos pontas após golo sofrido/defesa
+}
+
+export interface MatchTacticsSetup {
+  defense: DefensiveTactics;
+  offense: OffensiveTactics;
+  timeoutStrategy: 'auto' | 'manual';
+}
+
+export interface TacticCompatibility {
+  favorableAgainst: string[];
+  unfavorableAgainst: string[];
+  staminaDrainMultiplier: number; // Multiplicador de desgaste físico associado à intensidade tática
+}

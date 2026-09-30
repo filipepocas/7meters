@@ -1,0 +1,77 @@
+/**
+ * 7meters - Player Types
+ * Tipagem estrita para todos os atletas do universo do jogo.
+ * Suporta escala 1-10, idades de 15 a 38 anos, histórico e métricas em campo.
+ */
+
+export type PlayerPosition =
+  | 'Guarda-Redes'
+  | 'Ponta Esquerdo'
+  | 'Ponta Direito'
+  | 'Lateral Esquerdo'
+  | 'Lateral Direito'
+  | 'Central'
+  | 'Pivô';
+
+export interface PlayerAttributes {
+  stamina: number;           // Resistência física geral (1-10)
+  shooting: number;          // Potência e precisão de remate (1-10)
+  defense: number;           // Capacidade defensiva e bloco (1-10)
+  speed: number;             // Velocidade e contra-ataque (1-10)
+  intelligence: number;      // Leitura tática e passe (1-10)
+  goalkeeping: number;       // Eficácia sob a baliza (1-10, exclusivo GR)
+  pressureResistance: number;// Resistência à pressão em momentos decisivos (1-10)
+  shoulderEndurance: number; // Resistência do ombro a remates repetidos (1-10)
+}
+
+export interface PlayerInjury {
+  isInjured: boolean;
+  description: string;       // Ex: "Tendinite no Ombro", "Rotura Ligamento"
+  daysRemaining: number;     // Dias de recuperação no tempo interno do jogo
+  severity: 'ligeira' | 'moderada' | 'grave';
+}
+
+export interface Player {
+  id: string;
+  firstName: string;
+  lastName: string;
+  country: string;           // Nacionalidade (forte incidência em Portugal)
+  age: number;               // 15 a 38 anos (jovens, maduros e veteranos)
+  position: PlayerPosition;
+  
+  // Atributos de desempenho (escala 1 a 10)
+  attributes: PlayerAttributes;
+  
+  // Estado físico e psicológico
+  moral: number;             // 1 a 10 (afetado por minutagem, balneário e vitórias)
+  energyLevel: number;       // 0% a 100% (stamina acumulada para o jogo)
+  injury: PlayerInjury;
+  
+  // Situação Contratual e Financeira
+  marketValue: number;       // Valor de mercado em Euros
+  salary: number;            // Salário mensal/anual em Euros
+  contractYearsRemaining: number;
+  currentClubId: string | null;
+  isHired: boolean;
+  
+  // Estatísticas da Época
+  stats: {
+    matchesPlayed: number;
+    minutesPlayed: number;
+    goalsScored: number;
+    sevenMeterGoals: number;
+    yellowCards: number;
+    twoMinSuspensions: number;
+    redCards: number;
+    blueCards: number;
+    saves: number;            // Apenas para Guarda-Redes
+    shotAttempts: number;
+  };
+}
+
+export interface PlayerEvolutionsFactors {
+  teamQualityImpact: number;  // Qualidade das infraestruturas do clube
+  staffImpact: number;        // Qualidade do Fisioterapeuta e Treinador
+  minutesPlayedImpact: number;// Minutos efetivos jogados
+  randomnessFactor: number;   // Fator aleatório humano (surpresas de desenvolvimento)
+}

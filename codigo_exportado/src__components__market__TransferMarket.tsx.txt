@@ -1,0 +1,260 @@
+/**
+ * 7meters - Transfer Market & Player Auctions Component
+ * Mercado de transferências e leilões em tempo real.
+ * Permite filtrar jogadores livres/à venda, licitar em leilões, comprar a pronto
+ * e colocar jogadores do próprio plantel na lista de transferências.
+ */
+
+import React, { useState } from 'react';
+import { useGameStore } from '../../store/useGameStore';
+import { Player, Position } from '../../types/player.types';
+import { generateSquad } from '../../utils/generators/squadGen';
+
+export const TransferMarket: React.FC = () => {
+  const { userClub, userSquad, setUserClub, setUserSquad } = useGameStore();
+
+  // Lista mock de mercado gerada dinamicamente
+  const [marketPlayers, setMarketPlayers] = useState<Player[]>(() =>
+    generateSquad('market_pool', 12)
+  );
+
+  const [activeTab, setActiveTab] = useState<'buy' | 'sell'>('buy');
+  const [selectedPosition, setSelectedPosition] = useState<Position | 'TODAS'>('TODAS');
+  const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
+
+  // Filtragem de Jogadores
+  const filteredMarket = marketPlayers.filter((p) => {
+    if (selectedPosition !== 'TODAS' && p.position !== selectedPosition) {
+      return false;
+    }
+    return true;
+  });
+
+  // Ação de Compra de Jogador
+  const handleBuyPlayer = (player: Player) => {
+    if (!userClub) return;
+
+    if (userClub.budget < player.marketValue) {
+      setFeedbackMessage(`Saldo insuficiente! Precisas de €${player.marketValue.toLocaleString()} mas só tens €${userClub.budget.toLocaleString()}.`);
+      return;
+    }
+
+    // Deduzir orçamento e adicionar jogador ao plantel do utilizador
+    const updatedClub = { ...userClub, budget: userClub.budget - player.marketValue };
+    const updatedSquad = [...userSquad, { ...player, clubId: userClub.id }];
+
+    setUserClub(updatedClub);
+    setUserSquad(updatedSquad);
+
+    // Remover do mercado
+    setMarketPlayers(marketPlayers.filter((p) => p.id !== player.id));
+    setFeedbackMessage(`Contratação concluída! ${player.name} assinou pelo ${userClub.name}.`);
+  };
+
+  // Ação de Licitação em Leilão
+  const handleBidPlayer = (player: Player) => {
+    if (!userClub) return;
+
+    const bidAmount = Math.round(player.marketValue * 1.1);
+    if (userClub.budget < bidAmount) {
+      setFeedbackMessage(`Saldo insuficiente para cobrir a licitação de €${bidAmount.toLocaleString()}.`);
+      return;
+    }
+
+    setFeedbackMessage(`Licitação de €${bidAmount.toLocaleString()} efetuada com sucesso para ${player.name}!`);
+  };
+
+  // Ação de Colocar Jogador à Venda
+  const handleSellPlayer = (player: Player) => {
+    if (!userClub) return;
+
+    if (userSquad.length <= 7) {
+      setFeedbackMessage('Não podes vender este jogador. Tens de manter pelo menos 7 jogadores no plantel!');
+      return;
+    }
+
+    const saleValue = Math.round(player.marketValue * 0.9);
+    const updatedClub = { ...userClub, budget: userClub.budget + saleValue };
+    const updatedSquad = userSquad.filter((p) => p.id !== player.id);
+
+    setUserClub(updatedClub);
+    setUserSquad(updatedSquad);
+    setFeedbackMessage(`${player.name} foi vendido por €${saleValue.toLocaleString()}!`);
+  };
+
+  return (
+    <div className="w-full space-y-6">
+      {/* Cabeçalho do Mercado */}
+      <div className="border-4 border-black bg-white p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] dark:border-white dark:bg-zinc-900 dark:text-white">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 className="text-3xl font-black uppercase tracking-wider">
+              🏪 Mercado de Transferências & Leilões
+            </h2>
+            <p className="mt-1 text-sm font-bold text-zinc-600 dark:text-zinc-300">
+              Reforça a tua equipa ou vende jogadores para equilibrar a tesouraria do clube.
+            </p>
+          </div>
+
+          <div className="border-2 border-black bg-yellow-300 px-4 py-2 font-mono font-black text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+            <span>Saldo Disponível: €{(userClub?.budget ?? 0).toLocaleString()}</span>
+          </div>
+        </div>
+      </div>
+
+      {feedbackMessage && (
+        <div className="border-4 border-black bg-blue-300 p-4 font-black text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:border-white">
+          📢 {feedbackMessage}
+        </div>
+      )}
+
+      {/* Navegação por Separadores */}
+      <div className="flex border-b-4 border-black dark:border-white">
+        <button
+          onClick={() => setActiveTab('buy')}
+          className={`px-6 py-3 font-black uppercase border-t-4 border-l-4 border-r-4 border-black dark:border-white ${
+            activeTab === 'buy'
+              ? 'bg-yellow-400 text-black'
+              : 'bg-white text-black dark:bg-zinc-800 dark:text-white'
+          }`}
+        >
+          🛒 Comprar / Leilões ({marketPlayers.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('sell')}
+          className={`px-6 py-3 font-black uppercase border-t-4 border-l-4 border-r-4 border-black dark:border-white ${
+            activeTab === 'sell'
+              ? 'bg-yellow-400 text-black'
+              : 'bg-white text-black dark:bg-zinc-800 dark:text-white'
+          }`}
+        >
+          🏷️ Vender do Plantel ({userSquad.length})
+        </button>
+      </div>
+
+      {/* Vista de Compra */}
+      {activeTab === 'buy' && (
+        <div className="space-y-6">
+          {/* Filtros de Posição */}
+          <div className="flex flex-wrap gap-2 border-4 border-black bg-white p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:border-white dark:bg-zinc-900 dark:text-white">
+            <span className="font-black uppercase text-xs self-center mr-2">Filtrar Posição:</span>
+            {(['TODAS', 'GR', 'PE', 'PD', 'C', 'LE', 'LD', 'PV'] as const).map((pos) => (
+              <button
+                key={pos}
+                onClick={() => setSelectedPosition(pos)}
+                className={`border-2 border-black px-3 py-1 font-mono text-xs font-black uppercase shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] dark:border-white ${
+                  selectedPosition === pos
+                    ? 'bg-black text-white dark:bg-white dark:text-black'
+                    : 'bg-zinc-100 text-black hover:bg-zinc-200 dark:bg-zinc-800 dark:text-white'
+                }`}
+              >
+                {pos}
+              </button>
+            ))}
+          </div>
+
+          {/* Grelha de Cartões de Jogador */}
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {filteredMarket.map((player) => (
+              <div
+                key={player.id}
+                className="border-4 border-black bg-white p-5 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:border-white dark:bg-zinc-900 dark:text-white flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex justify-between items-start mb-3">
+                    <span className="border-2 border-black bg-black px-2 py-1 text-xs font-black text-white dark:border-white dark:bg-white dark:text-black">
+                      {player.position}
+                    </span>
+                    <span className="border-2 border-black bg-green-300 px-2 py-1 font-mono text-xs font-black text-black">
+                      OVR {player.overallRating}
+                    </span>
+                  </div>
+
+                  <h3 className="text-xl font-black uppercase mb-1">{player.name}</h3>
+                  <p className="text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-4">
+                    Idade: {player.age} anos | Remate: {player.shooting} | Defesa: {player.defense} | GR: {player.goalkeeping}
+                  </p>
+                </div>
+
+                <div>
+                  <div className="border-2 border-black bg-zinc-50 p-2 font-mono text-center mb-4 dark:border-white dark:bg-zinc-800">
+                    <span className="block text-[10px] font-black uppercase text-zinc-500 dark:text-zinc-400">
+                      Valor de Passe
+                    </span>
+                    <span className="text-lg font-black text-green-600 dark:text-green-400">
+                      €{player.marketValue.toLocaleString()}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => handleBuyPlayer(player)}
+                      className="border-2 border-black bg-green-500 p-2 text-xs font-black uppercase text-white hover:bg-green-600 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                    >
+                      Comprar Já
+                    </button>
+                    <button
+                      onClick={() => handleBidPlayer(player)}
+                      className="border-2 border-black bg-yellow-400 p-2 text-xs font-black uppercase text-black hover:bg-yellow-300 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                    >
+                      Licitar Leilão
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Vista de Venda */}
+      {activeTab === 'sell' && (
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {userSquad.map((player) => {
+            const estimatedSale = Math.round(player.marketValue * 0.9);
+            return (
+              <div
+                key={player.id}
+                className="border-4 border-black bg-white p-5 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:border-white dark:bg-zinc-900 dark:text-white flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex justify-between items-start mb-3">
+                    <span className="border-2 border-black bg-black px-2 py-1 text-xs font-black text-white dark:border-white dark:bg-white dark:text-black">
+                      {player.position}
+                    </span>
+                    <span className="border-2 border-black bg-blue-300 px-2 py-1 font-mono text-xs font-black text-black">
+                      OVR {player.overallRating}
+                    </span>
+                  </div>
+
+                  <h3 className="text-xl font-black uppercase mb-1">{player.name}</h3>
+                  <p className="text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-4">
+                    Salário: €{player.wage.toLocaleString()} /semana | Idade: {player.age} anos
+                  </p>
+                </div>
+
+                <div>
+                  <div className="border-2 border-black bg-zinc-50 p-2 font-mono text-center mb-4 dark:border-white dark:bg-zinc-800">
+                    <span className="block text-[10px] font-black uppercase text-zinc-500 dark:text-zinc-400">
+                      Receita Estimada de Venda
+                    </span>
+                    <span className="text-lg font-black text-green-600 dark:text-green-400">
+                      +€{estimatedSale.toLocaleString()}
+                    </span>
+                  </div>
+
+                  <button
+                    onClick={() => handleSellPlayer(player)}
+                    className="w-full border-2 border-black bg-red-600 p-2 text-xs font-black uppercase text-white hover:bg-red-700 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                  >
+                    Vender Jogador
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};

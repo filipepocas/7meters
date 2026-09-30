@@ -1,0 +1,155 @@
+/**
+ * 7meters - Online Match & Auto-Pilot Engine
+ * Gestor do agendamento de jogos multiplayer entre jogadores humanos:
+ * envio de propostas, aceitação/recusa, reagendamento com consentimento mútuo,
+ * e verificação de prazos/ausência para ativação de auto-piloto (simulação estocástica por IA).
+ */
+
+import { Club } from '../types/club.types';
+import { MatchEvent, MatchResult } from '../types/match.types';
+import { MatchScheduleProposal, PlayerActivityStatus } from '../types/onlineMatch.types';
+import { Player } from '../types/player.types';
+import { Referee } from '../types/referee.types';
+import { simulateMatch, TacticalSetup } from './matchEngine';
+
+/**
+ * Cria uma nova proposta de agendamento de jogo online.
+ */
+export function createMatchScheduleProposal(
+  matchId: string,
+  homeClubId: string,
+  awayClubId: string,
+  proposedByClubId: string,
+  proposedTimestamp: number,
+  deadlineTimestamp: number
+): MatchScheduleProposal {
+  return {
+    proposalId: `prop_${Date.now()}_${matchId}`,
+    matchId,
+    homeClubId,
+    awayClubId,
+    proposedByClubId,
+    proposedTimestamp,
+    deadlineTimestamp,
+    status: 'pendente_aceitacao',
+    rescheduleHistory: [],
+  };
+}
+
+/**
+ * Responde a uma proposta de agendamento (Aceitar ou Recusar para Reagendar).
+ */
+export function respondToMatchProposal(
+  proposal: MatchScheduleProposal,
+  respondingClubId: string,
+  accept: boolean,
+  newProposedTimestamp?: number,
+  rejectionReason?: string
+): MatchScheduleProposal {
+  if (accept) {
+    return {
+      ...proposal,
+      status: 'agendado',
+    };
+  }
+
+  // Recusa com pedido de nova data/hora de reagendamento
+  const updatedHistory = [
+    ...proposal.rescheduleHistory,
+    {
+      proposedByClubId: proposal.proposedByClubId,
+      proposedTimestamp: proposal.proposedTimestamp,
+      responseDate: Date.now(),
+      status: 'recusado' as const,
+    },
+  ];
+
+  return {
+    ...proposal,
+    proposedByClubId: respondingClubId,
+    proposedTimestamp: newProposedTimestamp || proposal.proposedTimestamp + 86400000, // +24 horas por defeito
+    status: 'em_reagendamento',
+    rejectionReason: rejectionReason || 'Data ou hora indisponível. Foi proposta uma nova data para a partida.',
+    rescheduleHistory: updatedHistory,
+  };
+}
+
+/**
+ * Verifica se um dos jogadores ou ambos estão ausentes/inativos antes do limite.
+ */
+export function checkPlayerAbsenceStatus(
+  homeActivity: PlayerActivityStatus,
+  awayActivity: PlayerActivityStatus,
+  proposal: MatchScheduleProposal,
+  currentTimestamp: number
+): { isHomeAbsent: boolean; isAwayAbsent: boolean; shouldTriggerAutoSim: boolean } {
+  const isTimeLimitReached = currentTimestamp >= proposal.deadlineTimestamp;
+  const isHomeAbsent = !homeActivity.isOnline || currentTimestamp - homeActivity.lastActiveTimestamp > 172800000; // 48 horas inativo
+  const isAwayAbsent = !awayActivity.isOnline || currentTimestamp - awayActivity.lastActiveTimestamp > 172800000;
+
+  const shouldTriggerAutoSim = isTimeLimitReached || (proposal.status !== 'agendado' && currentTimestamp > proposal.proposedTimestamp);
+
+  return {
+    isHomeAbsent,
+    isAwayAbsent,
+    shouldTriggerAutoSim,
+  };
+}
+
+/**
+ * Simula a partida com táticas e gestão automatizada (Auto-Piloto) para equipas cujo jogador esteve ausente.
+ */
+export function simulateAutoPilotMatch(
+  homeClub: Club,
+  awayClub: Club,
+  homeSquad: Player[],
+  awaySquad: Player[],
+  referee?: Referee,
+  isHomeAbsent = false,
+  isAwayAbsent = false
+): { matchResult: MatchResult; summaryNote: string } {
+  // Tática automática gerada pela IA caso o treinador esteja ausente
+  const autoTactics: TacticalSetup = {
+    defensiveStyle: '6-0',
+    offensivePace: 'equilibrado',
+    sevenAgainstSix: false,
+    aggressiveDefense: false,
+  };
+
+  const matchResult = simulateMatch({
+    homeClub,
+    awayClub,
+    homeSquad,
+    awaySquad,
+    referee,
+    homeTactics: autoTactics,
+    awayTactics: autoTactics,
+  });
+
+  let note = 'Jogo realizado com ambas as equipas geridas pelos respetivos treinadores.';
+  if (isHomeAbsent && isAwayAbsent) {
+    note = 'Jogo simulado automaticamente por ausência/inatividade de ambos os treinadores dentro do prazo.';
+  } else if (isHomeAbsent) {
+    note = `Jogo simulado por auto-piloto devido à ausência do treinador do ${homeClub.name}.`;
+  } else if (isAwayAbsent) {
+    note = `Jogo simulado por auto-piloto devido à ausência do treinador do ${awayClub.name}.`;
+  }
+
+  // Adiciona evento informativo sobre a intervenção do auto-piloto
+  const autoPilotEvent: MatchEvent = {
+    id: `evt_autopilot_${Date.now()}`,
+    minute: 0,
+    second: 0,
+    type: 'foul',
+    description: note,
+    clubId: homeClub.id,
+  };
+
+  return {
+    matchResult: {
+      ...matchResult,
+      events: [autoPilotEvent, ...matchResult.events],
+    },
+    summaryNote: note,
+  };
+}

@@ -1,0 +1,56 @@
+/**
+ * 7meters - Club Types
+ * Tipagem estrita para a gestão integral do clube.
+ * Cobre personalização de camisolas (1000 combinações), pavilhões (1000 arenas),
+ * orçamento, tesouraria e presença na liga.
+ */
+
+export interface JerseyConfig {
+  id: number;                   // 1 a 1000
+  primaryColor: string;          // Código HEX ou CSS da cor principal
+  secondaryColor: string;        // Cor secundária/detalhes
+  patternType: 'solid' | 'stripes_vertical' | 'stripes_horizontal' | 'diagonal' | 'modern_abstract';
+  chestSponsorName?: string;
+}
+
+export interface ArenaInfo {
+  id: number;                   // 1 a 1000 (identificador da imagem e do complexo)
+  name: string;
+  imagePath: string;             // Caminho para o asset do pavilhão em /assets/images/arenas/
+  capacity: number;              // Lotação total de lugares sentados
+  rentalOrMaintenanceCost: number;// Custo fixo mensal/por jogo em Euros
+  energyEfficiencyRating: number;// 1 a 10 (afeta gastos operacionais em inverno/aquecimento)
+  prestigeBonus: number;        // 1 a 10 (influencia atração de adeptos e moral em casa)
+}
+
+export interface FinancialTransaction {
+  id: string;
+  timestamp: string;
+  amountEuro: number;            // Positivo para receita, negativo para despesa
+  category: 'ticket_sales' | 'salaries' | 'arena_costs' | 'transfers' | 'sponsorship' | 'injection';
+  description: string;
+}
+
+export interface ClubState {
+  id: string;
+  userId: string;
+  clubName: string;
+  divisionId: number;            // Divisão atual no campeonato
+  currentLeaguePosition: number; // Posicionamento na tabela
+  
+  // Customização Visual e Infraestruturas
+  jersey: JerseyConfig;
+  arena: ArenaInfo;
+  
+  // Tesouraria e Finanças (Orçamento Inicial: 1.500.000 €)
+  budgetEuro: number;
+  financialHistory: FinancialTransaction[];
+  
+  // Estruturas de Plantel e Staff
+  playerIds: string[];
+  staffIds: string[];
+  
+  // Métricas do Clube
+  fanBaseCount: number;
+  overallPrestige: number;       // 1 a 10
+}

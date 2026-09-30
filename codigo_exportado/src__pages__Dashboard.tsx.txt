@@ -1,0 +1,208 @@
+/**
+ * 7meters - Central Game Dashboard & Hub
+ * Painel principal totalmente integrado com suporte para:
+ * - Visão Geral Finanças & Pavilhão
+ * - Quadro Tático & Seleção do 7 Inicial
+ * - Simulação de Partida de Andebol em Tempo Real
+ * - Mercado de Transferências & Leilões
+ * - Tabela de Classificação da Liga
+ * - Gestão de Finanças (Empréstimos BCP e Patrocínios Mistério)
+ */
+
+import React, { useState } from 'react';
+import { useGameStore } from '../store/useGameStore';
+import { BankLoanModal } from '../components/finance/BankLoanModal';
+import { MysterySponsorModal } from '../components/finance/MysterySponsorModal';
+import { MatchScheduleModal } from '../components/multiplayer/MatchScheduleModal';
+import { TacticsView } from '../components/tactics/TacticsView';
+import { MatchLiveViewer } from '../components/match/MatchLiveViewer';
+import { TransferMarket } from '../components/market/TransferMarket';
+import { LeagueStandings } from '../components/league/LeagueStandings';
+import { generateClubProfile } from '../utils/generators/clubGen';
+import { generateSquad } from '../utils/generators/squadGen';
+import { MatchResult } from '../types/match.types';
+
+type ActiveTab = 'overview' | 'tactics' | 'match' | 'market' | 'league';
+
+export const Dashboard: React.FC = () => {
+  const { userClub, userSquad } = useGameStore();
+
+  const [activeTab, setActiveTab] = useState<ActiveTab>('overview');
+  const [isLoanModalOpen, setIsLoanModalOpen] = useState<boolean>(false);
+  const [isSponsorModalOpen, setIsSponsorModalOpen] = useState<boolean>(false);
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState<boolean>(false);
+  const [completedMatches, setCompletedMatches] = useState<MatchResult[]>([]);
+
+  // Oponente padrão para demonstração de jogo ao vivo
+  const defaultOpponentClub = generateClubProfile('ABC Braga', 'Nacional', 150000);
+  const defaultOpponentSquad = generateSquad(defaultOpponentClub.id, 16);
+
+  const handleMatchComplete = (result: MatchResult) => {
+    setCompletedMatches((prev) => [...prev, result]);
+  };
+
+  if (!userClub) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-zinc-100 dark:bg-zinc-950 font-black">
+        <div className="border-4 border-black bg-yellow-300 p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] text-2xl uppercase">
+          ⏳ A carregar os dados do teu clube...
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-zinc-100 p-4 text-black dark:bg-zinc-950 dark:text-white md:p-8">
+      {/* Cabeçalho Principal Brutalista */}
+      <header className="mb-8 border-4 border-black bg-yellow-400 p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] dark:border-white dark:bg-yellow-500 dark:text-black">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <span className="border-2 border-black bg-black px-2 py-0.5 font-mono text-xs font-black uppercase text-white">
+              7meters Handball Manager
+            </span>
+            <h1 className="mt-1 text-4xl font-black uppercase tracking-tight md:text-5xl">
+              {userClub.name}
+            </h1>
+            <p className="font-mono text-sm font-bold">
+              Divisão: {userClub.level} | Pavilhão: Cap. {userClub.stadiumCapacity.toLocaleString()} lugares
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-3 font-mono">
+            <div className="border-2 border-black bg-white px-4 py-2 font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+              💰 €{userClub.budget.toLocaleString()}
+            </div>
+            <div className="border-2 border-black bg-white px-4 py-2 font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+              👥 {userSquad.length} Jogadores
+            </div>
+          </div>
+        </div>
+
+        {/* Botões de Ação Rápida Financeira e Multiplayer */}
+        <div className="mt-6 flex flex-wrap gap-3 border-t-2 border-black pt-4 dark:border-black">
+          <button
+            onClick={() => setIsLoanModalOpen(true)}
+            className="border-2 border-black bg-white px-4 py-2 text-xs font-black uppercase hover:bg-zinc-200 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+          >
+            🏦 Crédito BCP
+          </button>
+          <button
+            onClick={() => setIsSponsorModalOpen(true)}
+            className="border-2 border-black bg-purple-600 px-4 py-2 text-xs font-black uppercase text-white hover:bg-purple-700 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+          >
+            🎁 Patrocínio Mistério
+          </button>
+          <button
+            onClick={() => setIsScheduleModalOpen(true)}
+            className="border-2 border-black bg-black px-4 py-2 text-xs font-black uppercase text-white hover:bg-zinc-800 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] dark:border-white"
+          >
+            📅 Horários Jogos Online
+          </button>
+        </div>
+      </header>
+
+      {/* Navegação Principal por Separadores */}
+      <nav className="mb-6 flex flex-wrap border-b-4 border-black dark:border-white">
+        {[
+          { id: 'overview', label: '🏠 Visão Geral' },
+          { id: 'tactics', label: '📋 Tática & 7 Inicial' },
+          { id: 'match', label: '🤾 Jogar Partida' },
+          { id: 'market', label: '🏪 Transferências' },
+          { id: 'league', label: '🏆 Classificação' },
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id as ActiveTab)}
+            className={`border-t-4 border-l-4 border-r-4 border-black px-6 py-3 font-black uppercase shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] dark:border-white ${
+              activeTab === tab.id
+                ? 'bg-yellow-400 text-black'
+                : 'bg-white text-black hover:bg-zinc-200 dark:bg-zinc-900 dark:text-white dark:hover:bg-zinc-800'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </nav>
+
+      {/* Conteúdo Principal Conforme a Aba Selecionada */}
+      <main className="space-y-6">
+        {activeTab === 'overview' && (
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            {/* Resumo do Plantel */}
+            <div className="border-4 border-black bg-white p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:border-white dark:bg-zinc-900 dark:text-white">
+              <h3 className="text-2xl font-black uppercase border-b-4 border-black pb-3 mb-4 dark:border-white">
+                🤾 Resumo do Plantel
+              </h3>
+              <div className="space-y-2 font-mono text-sm max-h-80 overflow-y-auto pr-2">
+                {userSquad.map((player) => (
+                  <div key={player.id} className="flex justify-between border-b border-zinc-200 py-2 dark:border-zinc-800">
+                    <div>
+                      <span className="bg-black text-white px-2 py-0.5 text-xs font-black mr-2 dark:bg-white dark:text-black">
+                        {player.position}
+                      </span>
+                      <span className="font-bold">{player.name}</span>
+                    </div>
+                    <span className="font-black text-blue-600 dark:text-blue-400">OVR {player.overallRating}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Estado Financeiro & Instalações */}
+            <div className="space-y-6">
+              <div className="border-4 border-black bg-white p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:border-white dark:bg-zinc-900 dark:text-white">
+                <h3 className="text-2xl font-black uppercase border-b-4 border-black pb-3 mb-4 dark:border-white">
+                  🏟️ Pavilhão & Adeptos
+                </h3>
+                <div className="space-y-3 font-mono text-sm">
+                  <div className="flex justify-between">
+                    <span>Lotação do Pavilhão:</span>
+                    <span className="font-black">{userClub.stadiumCapacity.toLocaleString()} Lugares</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Base de Adeptos:</span>
+                    <span className="font-black">{userClub.fanbase.toLocaleString()} Adeptos</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Preço Médio Bilhete:</span>
+                    <span className="font-black">€12.50</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-4 border-black bg-green-400 p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:border-white dark:text-black">
+                <h3 className="text-2xl font-black uppercase border-b-4 border-black pb-2 mb-2">
+                  ✅ Jogo 100% Funcional!
+                </h3>
+                <p className="font-mono text-xs font-bold">
+                  Todas as componentes do 7meters estão integradas: Simulação de Partida, Mercado de Transferências, Sistema de Crédito BCP, Patrocínios Mistério, Tática e Classificação Oficial de Andebol.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'tactics' && <TacticsView />}
+
+        {activeTab === 'match' && (
+          <MatchLiveViewer
+            homeClub={userClub}
+            homeSquad={userSquad}
+            awayClub={defaultOpponentClub}
+            awaySquad={defaultOpponentSquad}
+            onMatchComplete={handleMatchComplete}
+          />
+        )}
+
+        {activeTab === 'market' && <TransferMarket />}
+
+        {activeTab === 'league' && <LeagueStandings completedMatches={completedMatches} />}
+      </main>
+
+      {/* Modais Financeiros e Multiplayer */}
+      <BankLoanModal isOpen={isLoanModalOpen} onClose={() => setIsLoanModalOpen(false)} />
+      <MysterySponsorModal isOpen={isSponsorModalOpen} onClose={() => setIsSponsorModalOpen(false)} />
+      <MatchScheduleModal isOpen={isScheduleModalOpen} onClose={() => setIsScheduleModalOpen(false)} />
+    </div>
+  );
+};

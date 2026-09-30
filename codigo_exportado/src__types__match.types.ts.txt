@@ -1,0 +1,115 @@
+/**
+ * 7meters - Match Types
+ * Tipagem estrita para o motor de simulação por frames de 5 minutos (12 blocos por jogo).
+ * Cobre incidências em tempo real, momentos de jogo, estatísticas moleculares,
+ * exclusões de 2 minutos e dados do marcador.
+ */
+
+import { DefensiveSystem, OffensiveSystem } from './tactics.types';
+
+export type MatchEventType =
+  | 'goal'
+  | '7m_goal'
+  | '7m_miss'
+  | 'shot_saved'
+  | 'shot_missed'
+  | 'turnover'
+  | 'yellow_card'
+  | 'two_min_suspension'
+  | 'red_card'
+  | 'blue_card'
+  | 'injury'
+  | 'timeout'
+  | 'tactical_change'
+  | 'momentum_shift'
+  | 'dynamic_event';
+
+export interface MatchEvent {
+  id: string;
+  minute: number;              // Minuto exato do evento (1 a 60)
+  frameIndex: number;          // Bloco temporal (1 a 12)
+  type: MatchEventType;
+  teamId: string;
+  playerId?: string;
+  assistantPlayerId?: string;  // Jogador que fez a assistência
+  description: string;         // Descrição narrativa em direto
+  isSevenMeter: boolean;
+  scoreHomeAfter: number;
+  scoreAwayAfter: number;
+}
+
+export interface ActiveSuspension {
+  playerId: string;
+  teamId: string;
+  frameStarted: number;
+  minuteStarted: number;
+  minutesRemaining: number;    // Duração padrão: 2 minutos
+}
+
+export interface MatchFrameData {
+  frameIndex: number;          // 1 a 12 (5 em 5 minutos)
+  startMinute: number;         // ex: 0, 5, 10, ...
+  endMinute: number;           // ex: 5, 10, 15, ...
+  
+  // Resultado acumulado ao final do frame
+  homeScore: number;
+  awayScore: number;
+  
+  // Métrica de Ritmo e Ascendente Psicológico (-10 a +10)
+  momentumValue: number;       // Positivo = ascendente da equipa da casa; Negativo = visitante
+  
+  events: MatchEvent[];
+}
+
+export interface TeamLiveStats {
+  shotsTotal: number;
+  shotsOnTarget: number;
+  goals: number;
+  sevenMetersAttempted: number;
+  sevenMetersScored: number;
+  saves: number;
+  turnovers: number;
+  steals: number;
+  yellowCards: number;
+  twoMinSuspensions: number;
+  redCards: number;
+  blueCards: number;
+  timeoutsUsed: number;        // Máximo de 3 por jogo (com limite de 2 na 2ª parte)
+}
+
+export interface LiveMatchState {
+  matchId: string;
+  homeTeamId: string;
+  awayTeamId: string;
+  homeTeamName: string;
+  awayTeamName: string;
+  
+  // Estado do Relógio e Frame
+  currentFrame: number;        // 1 a 12
+  currentMinute: number;       // 0 a 60
+  isPaused: boolean;
+  isFinished: boolean;
+  
+  // Marcador Atual
+  homeScore: number;
+  awayScore: number;
+  
+  // Táticas Ativas
+  homeTactics: {
+    defense: DefensiveSystem;
+    offense: OffensiveSystem;
+  };
+  awayTactics: {
+    defense: DefensiveSystem;
+    offense: OffensiveSystem;
+  };
+  
+  // Exclusões e Estatísticas
+  activeSuspensions: ActiveSuspension[];
+  homeStats: TeamLiveStats;
+  awayStats: TeamLiveStats;
+  
+  // Histórico de Frames e Eventos
+  framesHistory: MatchFrameData[];
+  fullCommentaryFeed: MatchEvent[];
+}

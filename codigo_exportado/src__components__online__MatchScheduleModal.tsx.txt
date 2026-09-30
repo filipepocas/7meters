@@ -1,0 +1,157 @@
+/**
+ * 7meters - Match Schedule Modal Component
+ * Interface para gestão de propostas de horários de jogos multiplayer online,
+ * permitindo aceitar, recusar e enviar contrapropostas de hora/dia.
+ */
+
+import React, { useState } from 'react';
+import { useGameStore } from '../../store/useGameStore';
+import { MatchScheduleProposal } from '../../types/onlineMatch.types';
+
+interface MatchScheduleModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export const MatchScheduleModal: React.FC<MatchScheduleModalProps> = ({ isOpen, onClose }) => {
+  const { userClub, onlineProposals, handleProposalResponse } = useGameStore();
+  const [selectedProposal, setSelectedProposal] = useState<MatchScheduleProposal | null>(null);
+  const [counterTime, setCounterTime] = useState<string>('');
+  const [actionFeedback, setActionFeedback] = useState<string | null>(null);
+
+  if (!isOpen || !userClub) return null;
+
+  const pendingProposals = onlineProposals.filter(
+    (prop) => prop.status === 'pendente' || prop.status === 'proposto'
+  );
+
+  const handleResponse = (proposalId: string, accept: boolean, customTimestamp?: number) => {
+    handleProposalResponse(proposalId, accept, customTimestamp);
+    setActionFeedback(
+      accept
+        ? 'Proposta aceite! O jogo online foi confirmado no calendário.'
+        : customTimestamp
+        ? 'Nova hora enviada como contraproposta ao adversário.'
+        : 'Proposta recusada.'
+    );
+    setSelectedProposal(null);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+      <div className="w-full max-w-3xl rounded-none border-4 border-black bg-white p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] dark:bg-zinc-900 dark:border-white dark:text-white">
+        
+        {/* Cabeçalho do Modal */}
+        <div className="flex items-center justify-between border-b-4 border-black pb-4 dark:border-white">
+          <h2 className="text-2xl font-black uppercase tracking-wider">
+            🌐 Agendamento de Jogos Online
+          </h2>
+          <button
+            onClick={onClose}
+            className="border-2 border-black bg-red-500 px-3 py-1 font-bold text-white hover:bg-red-600 dark:border-white"
+          >
+            X
+          </button>
+        </div>
+
+        <p className="my-3 text-sm font-bold text-zinc-600 dark:text-zinc-300">
+          Gere e coordena as propostas de horário enviadas por outros treinadores para os teus jogos multiplayer online.
+        </p>
+
+        {/* Mensagem de Feedback de Ação */}
+        {actionFeedback && (
+          <div className="my-3 border-2 border-black bg-blue-100 p-3 text-center font-bold text-blue-900 dark:bg-blue-950 dark:text-blue-200 dark:border-white">
+            {actionFeedback}
+          </div>
+        )}
+
+        {/* Lista de Propostas Recebidas */}
+        {pendingProposals.length === 0 ? (
+          <div className="my-6 border-2 border-dashed border-black p-8 text-center font-bold text-zinc-500 dark:border-white dark:text-zinc-400">
+            Não tens propostas de agendamento pendentes de momento.
+          </div>
+        ) : (
+          <div className="my-4 space-y-3 max-h-80 overflow-y-auto pr-1">
+            {pendingProposals.map((proposal) => {
+              const isSelected = selectedProposal?.proposalId === proposal.proposalId;
+              const scheduledDate = new Date(proposal.proposedTimestamp);
+
+              return (
+                <div
+                  key={proposal.proposalId}
+                  className={`border-4 p-4 transition-all ${
+                    isSelected
+                      ? 'border-yellow-400 bg-yellow-50 dark:bg-yellow-950/40'
+                      : 'border-black bg-zinc-50 dark:border-white dark:bg-zinc-800'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-xs font-black uppercase text-zinc-500 dark:text-zinc-400">
+                        Jornada {proposal.fixtureRound} • Época {proposal.season}
+                      </div>
+                      <div className="text-lg font-black">
+                        Adversário: {proposal.opponentClubName}
+                      </div>
+                      <div className="font-mono text-sm font-bold text-blue-600 dark:text-blue-400">
+                        📅 Data Proposta: {scheduledDate.toLocaleDateString('pt-PT')} às {scheduledDate.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleResponse(proposal.proposalId, true)}
+                        className="border-2 border-black bg-green-500 px-4 py-2 font-black uppercase text-white hover:bg-green-600 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                      >
+                        Aceitar
+                      </button>
+                      <button
+                        onClick={() => handleResponse(proposal.proposalId, false)}
+                        className="border-2 border-black bg-red-500 px-4 py-2 font-black uppercase text-white hover:bg-red-600 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                      >
+                        Recusar
+                      </button>
+                      <button
+                        onClick={() => setSelectedProposal(isSelected ? null : proposal)}
+                        className="border-2 border-black bg-yellow-400 px-4 py-2 font-black uppercase text-black hover:bg-yellow-300 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                      >
+                        Alterar
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Painel de Contraproposta de Horário */}
+                  {isSelected && (
+                    <div className="mt-4 border-t-2 border-black pt-4 dark:border-white">
+                      <label className="block text-xs font-black uppercase mb-1">
+                        Propor Novo Horário:
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          type="datetime-local"
+                          value={counterTime}
+                          onChange={(e) => setCounterTime(e.target.value)}
+                          className="flex-1 border-2 border-black p-2 font-mono font-bold dark:border-white dark:bg-zinc-900 dark:text-white"
+                        />
+                        <button
+                          onClick={() => {
+                            if (!counterTime) return;
+                            const ts = new Date(counterTime).getTime();
+                            handleResponse(proposal.proposalId, false, ts);
+                          }}
+                          className="border-2 border-black bg-blue-600 px-4 py-2 font-black uppercase text-white hover:bg-blue-700 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                        >
+                          Enviar Contraproposta
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};

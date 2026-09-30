@@ -1,0 +1,192 @@
+/**
+ * 7meters - Player Generator
+ * Gerador procedural de atletas com perfilamento técnico e físico hiper-realista.
+ * Garante calibração de atributos (1 a 10) especializada por posição de jogo,
+ * cálculo dinâmico de valor de mercado e salários baseados no potencial e idade.
+ */
+
+import { GAME_CONFIG, PLAYER_POSITIONS } from '../../core/constants';
+import { Player, PlayerAttributes, PlayerPosition } from '../../types/player.types';
+import { generateRandomIdentity } from './nameGen';
+
+function clampStat(val: number): number {
+  return Math.max(GAME_CONFIG.STATS_MIN, Math.min(GAME_CONFIG.STATS_MAX, Math.round(val)));
+}
+
+function getRandomInt(min: number, max: number): number {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+/**
+ * Gera atributos (1 a 10) ajustados à posição específica do atleta.
+ */
+function generateAttributesByPosition(position: PlayerPosition, overallTier: number): PlayerAttributes {
+  // Variance para adicionar individualidade a cada atleta (-1, 0 ou +1)
+  const v = () => getRandomInt(-1, 1);
+
+  let stamina = overallTier + v();
+  let shooting = overallTier + v();
+  let defense = overallTier + v();
+  let speed = overallTier + v();
+  let intelligence = overallTier + v();
+  let goalkeeping = 1;
+  let pressureResistance = overallTier + v();
+  let shoulderEndurance = overallTier + v();
+
+  switch (position) {
+    case 'Guarda-Redes':
+      goalkeeping = overallTier + getRandomInt(0, 2);
+      shooting = getRandomInt(1, 3);
+      defense = getRandomInt(1, 3);
+      speed = overallTier - 1 + v();
+      shoulderEndurance = getRandomInt(2, 5);
+      break;
+
+    case 'Ponta Esquerdo':
+    case 'Ponta Direito':
+      speed = overallTier + getRandomInt(1, 2);
+      shooting = overallTier + v();
+      stamina = overallTier + v();
+      defense = overallTier - 1 + v();
+      shoulderEndurance = overallTier + v();
+      break;
+
+    case 'Lateral Esquerdo':
+    case 'Lateral Direito':
+      shooting = overallTier + getRandomInt(1, 2);
+      shoulderEndurance = overallTier + getRandomInt(1, 2);
+      stamina = overallTier + v();
+      intelligence = overallTier + v();
+      break;
+
+    case 'Central':
+      intelligence = overallTier + getRandomInt(1, 2);
+      stamina = overallTier + v();
+      shooting = overallTier + v();
+      pressureResistance = overallTier + getRandomInt(0, 2);
+      break;
+
+    case 'Pivô':
+      defense = overallTier + getRandomInt(1, 2);
+      stamina = overallTier + getRandomInt(1, 2);
+      shoulderEndurance = overallTier + v();
+      speed = overallTier - 1 + v();
+      break;
+  }
+
+  return {
+    stamina: clampStat(stamina),
+    shooting: clampStat(shooting),
+    defense: clampStat(defense),
+    speed: clampStat(speed),
+    intelligence: clampStat(intelligence),
+    goalkeeping: clampStat(goalkeeping),
+    pressureResistance: clampStat(pressureResistance),
+    shoulderEndurance: clampStat(shoulderEndurance),
+  };
+}
+
+/**
+ * Calcula o valor de mercado estimado em Euros (€) com base nos atributos e idade.
+ */
+function calculateMarketValue(attributes: PlayerAttributes, age: number, position: PlayerPosition): number {
+  const isGK = position === 'Guarda-Redes';
+  const relevantSum = isGK
+    ? attributes.goalkeeping * 3 + attributes.stamina + attributes.intelligence + attributes.pressureResistance
+    : attributes.shooting * 2 + attributes.defense * 2 + attributes.stamina + attributes.speed + attributes.intelligence + attributes.shoulderEndurance;
+
+  const baseVal = relevantSum * 12500;
+  
+  // Fator idade: jovens (18-24) têm mais valor probatório/potencial
+  let ageMultiplier = 1.0;
+  if (age >= 18 && age <= 23) ageMultiplier = 1.45;
+  else if (age >= 24 && age <= 29) ageMultiplier = 1.25;
+  else if (age >= 30 && age <= 34) ageMultiplier = 0.85;
+  else if (age >= 35) ageMultiplier = 0.50;
+
+  return Math.round(baseVal * ageMultiplier);
+}
+
+/**
+ * Gera um jogador completo para o universo do 7meters.
+ */
+export function generateRandomPlayer(
+  forcedPosition?: PlayerPosition,
+  forcedTier?: number,
+  clubId: string | null = null
+): Player {
+  const identity = generateRandomIdentity();
+  const position = forcedPosition || PLAYER_POSITIONS[Math.floor(Math.random() * PLAYER_POSITIONS.length)];
+  const age = getRandomInt(GAME_CONFIG.INITIAL_PLAYER_AGE_MIN, GAME_CONFIG.INITIAL_PLAYER_AGE_MAX);
+  
+  // Tier de qualidade base do atleta (1 a 10)
+  const tier = forcedTier || getRandomInt(3, 8);
+  const attributes = generateAttributesByPosition(position, tier);
+  const marketValue = calculateMarketValue(attributes, age, position);
+  
+  // Salário mensal proporcional (~1.5% a 2.5% do valor de mercado anualizado)
+  const salary = Math.max(800, Math.round((marketValue * 0.02) / 12));
+
+  return {
+    id: `plr_${Math.random().toString(36).substring(2, 11)}_${Date.now()}`,
+    firstName: identity.firstName,
+    lastName: identity.lastName,
+    country: identity.country,
+    age,
+    position,
+    attributes,
+    moral: getRandomInt(6, 9),
+    energyLevel: 100,
+    injury: {
+      isInjured: false,
+      description: '',
+      daysRemaining: 0,
+      severity: 'ligeira',
+    },
+    marketValue,
+    salary,
+    contractYearsRemaining: getRandomInt(1, 3),
+    currentClubId: clubId,
+    isHired: clubId !== null,
+    stats: {
+      matchesPlayed: 0,
+      minutesPlayed: 0,
+      goalsScored: 0,
+      sevenMeterGoals: 0,
+      yellowCards: 0,
+      twoMinSuspensions: 0,
+      redCards: 0,
+      blueCards: 0,
+      saves: 0,
+      shotAttempts: 0,
+    },
+  };
+}
+
+/**
+ * Gera um plantel completo e equilibrado para um clube (mínimo 14 a 16 jogadores).
+ */
+export function generateClubSquad(clubId: string, squadQualityTier = 5): Player[] {
+  const squad: Player[] = [];
+
+  // Estrutura padrão de plantel de andebol profissional
+  const positionQuota: { pos: PlayerPosition; count: number }[] = [
+    { pos: 'Guarda-Redes', count: 2 },
+    { pos: 'Ponta Esquerdo', count: 2 },
+    { pos: 'Ponta Direito', count: 2 },
+    { pos: 'Lateral Esquerdo', count: 3 },
+    { pos: 'Lateral Direito', count: 2 },
+    { pos: 'Central', count: 2 },
+    { pos: 'Pivô', count: 2 },
+  ];
+
+  for (const item of positionQuota) {
+    for (let i = 0; i < item.count; i++) {
+      // Variação suave de tier dentro da mesma equipa (titulares vs suplentes)
+      const playerTier = Math.max(1, Math.min(10, squadQualityTier + getRandomInt(-1, 1)));
+      squad.push(generateRandomPlayer(item.pos, playerTier, clubId));
+    }
+  }
+
+  return squad;
+}

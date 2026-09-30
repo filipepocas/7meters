@@ -1,0 +1,204 @@
+/**
+ * 7meters - Core Handball Match Engine
+ * Motor de simulação realista para partidas de andebol (2 partes de 30 minutos).
+ * Simula ataques, remates de 6m, 9m e pontas, livres de 7 metros, defesas de guarda-redes,
+ * sanções disciplinares (amarelos, exclusões de 2 minutos, vermelhos) e estatísticas completas.
+ */
+
+import { Club } from '../types/club.types';
+import { Player } from '../types/player.types';
+import { MatchEvent, MatchResult, PlayerMatchStats } from '../types/match.types';
+
+export interface TacticalSettings {
+  defenseSystem: '6-0' | '5-1' | '3-2-1' | '4-2';
+  attackPace: 'lento' | 'normal' | 'fastbreak';
+  aggressiveness: 'moderada' | 'intensa' | 'limite';
+}
+
+/**
+ * Simula uma partida completa de andebol entre duas equipas.
+ */
+export function simulateHandballMatch(
+  homeClub: Club,
+  homeSquad: Player[],
+  awayClub: Club,
+  awaySquad: Player[],
+  homeTactics?: TacticalSettings,
+  awayTactics?: TacticalSettings
+): MatchResult {
+  const events: MatchEvent[] = [];
+  
+  let homeScore = 0;
+  let awayScore = 0;
+
+  // Mapeamento de estatísticas individuais dos jogadores
+  const homePlayerStats: Record<string, PlayerMatchStats> = {};
+  const awayPlayerStats: Record<string, PlayerMatchStats> = {};
+
+  homeSquad.forEach((p) => {
+    homePlayerStats[p.id] = { playerId: p.id, playerName: p.name, goals: 0, shots: 0, saves: 0, assists: 0, exclusions: 0, yellowCards: 0, redCards: 0 };
+  });
+
+  awaySquad.forEach((p) => {
+    awayPlayerStats[p.id] = { playerId: p.id, playerName: p.name, goals: 0, shots: 0, saves: 0, assists: 0, exclusions: 0, yellowCards: 0, redCards: 0 };
+  });
+
+  // Identificação dos Guarda-Redes
+  const homeGK = homeSquad.find((p) => p.position === 'GR') || homeSquad[0];
+  const awayGK = awaySquad.find((p) => p.position === 'GR') || awaySquad[0];
+
+  // Jogadores de campo utilizáveis
+  const homeOutfield = homeSquad.filter((p) => p.position !== 'GR');
+  const awayOutfield = awaySquad.filter((p) => p.position !== 'GR');
+
+  // Cálculo da Força Ofensiva e Defensiva Média
+  const calcRating = (squad: Player[]) => squad.reduce((acc, p) => acc + p.overallRating, 0) / (squad.length || 1);
+  const homeRating = calcRating(homeSquad) + 3; // Bónus de casa
+  const awayRating = calcRating(awaySquad);
+
+  // Exclusões temporárias de 2 minutos ativas (armazenam o minuto em que terminam)
+  let homeExclusionsEnd: number[] = [];
+  let awayExclusionsEnd: number[] = [];
+
+  // Simulação minuto a minuto (60 minutos de jogo de andebol)
+  for (let minute = 1; minute <= 60; minute++) {
+    // Limpar exclusões expiradas
+    homeExclusionsEnd = homeExclusionsEnd.filter((endMin) => endMin > minute);
+    awayExclusionsEnd = awayExclusionsEnd.filter((endMin) => endMin > minute);
+
+    // Bónus de superioridade numérica em campo
+    const homePlayerCount = 7 - homeExclusionsEnd.length;
+    const awayPlayerCount = 7 - awayExclusionsEnd.length;
+
+    // Número médio de ataques por minuto no andebol (~1.2 a 1.6 posse de bola por minuto)
+    const possessions = Math.random() < 0.4 ? 2 : 1;
+
+    for (let pos = 0; pos < possessions; pos++) {
+      // Determina quem ataca nesta posse de bola
+      const isHomeAttacking = pos % 2 === 0 ? Math.random() < 0.52 : Math.random() < 0.48;
+
+      const attackingRating = isHomeAttacking ? homeRating + (homePlayerCount - awayPlayerCount) * 4 : awayRating + (awayPlayerCount - homePlayerCount) * 4;
+      const defendingGK = isHomeAttacking ? awayGK : homeGK;
+      const attackingSquad = isHomeAttacking ? homeOutfield : awayOutfield;
+      const defendingStats = isHomeAttacking ? awayPlayerStats : homePlayerStats;
+      const attackingStats = isHomeAttacking ? homePlayerStats : awayPlayerStats;
+
+      if (attackingSquad.length === 0) continue;
+
+      // Selecionar o rematador da jogada
+      const shooter = attackingSquad[Math.floor(Math.random() * attackingSquad.length)];
+      const shooterStats = attackingStats[shooter.id];
+      const gkStats = defendingStats[defendingGK.id];
+
+      // Possibilidade de Falta Técnica / Perda de Bola (Turnover)
+      if (Math.random() < 0.18) {
+        events.push({
+          minute,
+          type: 'falta_tecnica',
+          description: `Perda de bola ofensiva por passos/falta técnica de ${shooter.name}.`,
+          clubId: isHomeAttacking ? homeClub.id : awayClub.id,
+        });
+        continue;
+      }
+
+      // Possibilidade de Sanção Disciplinar para a defesa (Amarelo ou 2 Minutos)
+      if (Math.random() < 0.12) {
+        const defenders = isHomeAttacking ? awayOutfield : homeOutfield;
+        if (defenders.length > 0) {
+          const defender = defenders[Math.floor(Math.random() * defenders.length)];
+          const defenderStat = defendingStats[defender.id];
+
+          if (defenderStat) {
+            if (defenderStat.yellowCards === 0 && Math.random() < 0.5) {
+              defenderStat.yellowCards += 1;
+              events.push({
+                minute,
+                type: 'cartao_amarelo',
+                description: `Cartão amarelo mostrado a ${defender.name} por falta defensiva dura.`,
+                clubId: isHomeAttacking ? awayClub.id : homeClub.id,
+                playerId: defender.id,
+              });
+            } else {
+              defenderStat.exclusions += 1;
+              if (isHomeAttacking) awayExclusionsEnd.push(minute + 2);
+              else homeExclusionsEnd.push(minute + 2);
+
+              events.push({
+                minute,
+                type: 'exclusao_2min',
+                description: `Exclusão de 2 minutos atribuída a ${defender.name}!`,
+                clubId: isHomeAttacking ? awayClub.id : homeClub.id,
+                playerId: defender.id,
+              });
+            }
+          }
+        }
+      }
+
+      // Possibilidade de Livre de 7 Metros (Penalty)
+      const isSevenMeter = Math.random() < 0.10;
+      if (shooterStats) shooterStats.shots += 1;
+
+      // Probabilidade do remate resultar em golo
+      const shotQuality = (shooter.shooting + attackingRating) / 2;
+      const gkDefenseQuality = (defendingGK.goalkeeping + 10) / 1.2;
+      const scoringChance = isSevenMeter ? 0.75 : Math.max(0.25, Math.min(0.80, (shotQuality - gkDefenseQuality) / 100 + 0.50));
+
+      const isGoal = Math.random() < scoringChance;
+
+      if (isGoal) {
+        if (isHomeAttacking) homeScore += 1;
+        else awayScore += 1;
+
+        if (shooterStats) shooterStats.goals += 1;
+
+        events.push({
+          minute,
+          type: isSevenMeter ? 'golo_7m' : 'golo',
+          description: isSevenMeter
+            ? `GOLO de 7 Metros de ${shooter.name}! (${homeScore}-${awayScore})`
+            : `GOLO de ${shooter.name} com remate forte! (${homeScore}-${awayScore})`,
+          clubId: isHomeAttacking ? homeClub.id : awayClub.id,
+          playerId: shooter.id,
+        });
+      } else {
+        // Defesa do Guarda-Redes ou Remate Fora
+        const isSave = Math.random() < 0.70;
+        if (isSave && gkStats) {
+          gkStats.saves += 1;
+          events.push({
+            minute,
+            type: 'defesa_gr',
+            description: `Enorme defesa do guarda-redes ${defendingGK.name} ao remate de ${shooter.name}!`,
+            clubId: isHomeAttacking ? awayClub.id : homeClub.id,
+            playerId: defendingGK.id,
+          });
+        } else {
+          events.push({
+            minute,
+            type: 'remate_fora',
+            description: `Remate ao lado/à barra de ${shooter.name}.`,
+            clubId: isHomeAttacking ? homeClub.id : awayClub.id,
+            playerId: shooter.id,
+          });
+        }
+      }
+    }
+  }
+
+  return {
+    id: `mth_res_${homeClub.id}_vs_${awayClub.id}_${Date.now()}`,
+    homeClubId: homeClub.id,
+    awayClubId: awayClub.id,
+    homeClubName: homeClub.name,
+    awayClubName: awayClub.name,
+    homeScore,
+    awayScore,
+    events,
+    playerStats: {
+      home: Object.values(homePlayerStats),
+      away: Object.values(awayPlayerStats),
+    },
+    simulatedAt: new Date().toISOString(),
+  };
+}

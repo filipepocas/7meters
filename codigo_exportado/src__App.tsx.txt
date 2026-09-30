@@ -1,0 +1,46 @@
+/**
+ * 7meters - Application Entry Point
+ * Ponto de entrada principal com inicialização automática do estado inicial do clube,
+ * plantel e calendário de competição.
+ */
+
+import React, { useEffect } from 'react';
+import { Dashboard } from './pages/Dashboard';
+import { useGameStore } from './store/useGameStore';
+import { generateClubProfile } from './utils/generators/clubGen';
+import { generateSquad } from './utils/generators/squadGen';
+import { generateLeagueCalendar } from './engine/calendarEngine';
+
+export const App: React.FC = () => {
+  const { userClub, setUserClub, setUserSquad, setLeagueCalendar } = useGameStore();
+
+  useEffect(() => {
+    // Inicialização do Clube de Teste/Demonstração se ainda não existir no estado
+    if (!userClub) {
+      const demoClub = generateClubProfile('7meters HC', 'Nacional', 120000);
+      const demoSquad = generateSquad(demoClub.id, 16);
+      const opponentClubs = [
+        generateClubProfile('ABC Braga', 'Nacional', 150000),
+        generateClubProfile('FC Porto', 'Nacional', 300000),
+        generateClubProfile('Sporting CP', 'Nacional', 300000),
+        generateClubProfile('SL Benfica', 'Nacional', 300000),
+        generateClubProfile('Águas Santas', 'Nacional', 100000),
+      ];
+
+      const allLeagueClubs = [demoClub, ...opponentClubs];
+      const calendar = generateLeagueCalendar('liga_principal', allLeagueClubs, 1, 1);
+
+      setUserClub(demoClub);
+      setUserSquad(demoSquad);
+      setLeagueCalendar(calendar);
+    }
+  }, [userClub, setUserClub, setUserSquad, setLeagueCalendar]);
+
+  return (
+    <main className="min-h-screen bg-zinc-100 font-sans text-black dark:bg-zinc-950 dark:text-white">
+      <Dashboard />
+    </main>
+  );
+};
+
+export default App;

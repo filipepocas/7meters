@@ -1,0 +1,275 @@
+/**
+ * 7meters - Live Match Simulator Viewer Component
+ * Visualizador em tempo real para simulação de partidas de andebol.
+ * Inclui marcador ao vivo, cronómetro de 60 minutos, regulador de velocidade,
+ * relato de eventos minuto a minuto e estatísticas finais dos jogadores.
+ */
+
+import React, { useState, useEffect } from 'react';
+import { Club } from '../../types/club.types';
+import { Player } from '../../types/player.types';
+import { MatchResult, MatchEvent } from '../../types/match.types';
+import { simulateHandballMatch, TacticalSettings } from '../../engine/matchEngine';
+
+interface MatchLiveViewerProps {
+  homeClub: Club;
+  homeSquad: Player[];
+  awayClub: Club;
+  awaySquad: Player[];
+  homeTactics?: TacticalSettings;
+  awayTactics?: TacticalSettings;
+  onMatchComplete?: (result: MatchResult) => void;
+}
+
+export const MatchLiveViewer: React.FC<MatchLiveViewerProps> = ({
+  homeClub,
+  homeSquad,
+  awayClub,
+  awaySquad,
+  homeTactics,
+  awayTactics,
+  onMatchComplete,
+}) => {
+  const [matchResult, setMatchResult] = useState<MatchResult | null>(null);
+  const [currentMinute, setCurrentMinute] = useState<number>(0);
+  const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const [speedMs, setSpeedMs] = useState<number>(500); // 500ms por minuto virtual
+  const [activeTab, setActiveTab] = useState<'feed' | 'stats'>('feed');
+
+  // Inicializar a simulação no arranque
+  useEffect(() => {
+    const result = simulateHandballMatch(
+      homeClub,
+      homeSquad,
+      awayClub,
+      awaySquad,
+      homeTactics,
+      awayTactics
+    );
+    setMatchResult(result);
+  }, [homeClub, homeSquad, awayClub, awaySquad, homeTactics, awayTactics]);
+
+  // Cronómetro de simulação ao vivo
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (isPlaying && currentMinute < 60) {
+      timer = setTimeout(() => {
+        setCurrentMinute((prev) => prev + 1);
+      }, speedMs);
+    } else if (currentMinute >= 60 && isPlaying) {
+      setIsPlaying(false);
+      if (matchResult && onMatchComplete) {
+        onMatchComplete(matchResult);
+      }
+    }
+    return () => clearTimeout(timer);
+  }, [isPlaying, currentMinute, speedMs, matchResult, onMatchComplete]);
+
+  if (!matchResult) {
+    return (
+      <div className="border-4 border-black bg-white p-8 text-center font-black dark:border-white dark:bg-zinc-900 dark:text-white">
+        ⏳ A AQUECER O RECORTE TÁTICO E A PREPARAR O PAVILHÃO...
+      </div>
+    );
+  }
+
+  // Filtrar eventos ocorridos até ao minuto atual
+  const visibleEvents = matchResult.events.filter((e) => e.minute <= currentMinute);
+
+  // Calcular resultado parcial no minuto atual
+  const partialHomeGoals = visibleEvents.filter(
+    (e) => e.clubId === homeClub.id && (e.type === 'golo' || e.type === 'golo_7m')
+  ).length;
+
+  const partialAwayGoals = visibleEvents.filter(
+    (e) => e.clubId === awayClub.id && (e.type === 'golo' || e.type === 'golo_7m')
+  ).length;
+
+  const handleInstantSimulate = () => {
+    setCurrentMinute(60);
+    setIsPlaying(false);
+    if (onMatchComplete) {
+      onMatchComplete(matchResult);
+    }
+  };
+
+  return (
+    <div className="w-full space-y-6">
+      {/* Placar Principal e Cronómetro Brutalista */}
+      <div className="border-4 border-black bg-zinc-900 p-6 text-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] dark:border-white">
+        <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
+          {/* Equipa da Casa */}
+          <div className="text-center md:text-left">
+            <span className="text-xs font-black uppercase text-green-400">EQUIPA DA CASA</span>
+            <h2 className="text-3xl font-black uppercase">{homeClub.name}</h2>
+          </div>
+
+          {/* Resultado Parcial e Minuto */}
+          <div className="flex flex-col items-center border-4 border-white bg-black px-8 py-4 text-center shadow-[4px_4px_0px_0px_rgba(255,255,255,1)]">
+            <div className="text-xs font-mono font-black text-yellow-400 uppercase tracking-widest">
+              {currentMinute < 60 ? `MINUTO ${currentMinute}'` : '⏱️ FIM DO JOGO'}
+            </div>
+            <div className="text-5xl font-black font-mono tracking-widest my-1">
+              {partialHomeGoals} - {partialAwayGoals}
+            </div>
+            <div className="text-[10px] font-bold text-zinc-400 uppercase">
+              {currentMinute <= 30 ? '1ª Parte' : currentMinute < 60 ? '2ª Parte' : 'Resultado Final'}
+            </div>
+          </div>
+
+          {/* Equipa Visitante */}
+          <div className="text-center md:text-right">
+            <span className="text-xs font-black uppercase text-blue-400">VISITANTE</span>
+            <h2 className="text-3xl font-black uppercase">{awayClub.name}</h2>
+          </div>
+        </div>
+
+        {/* Barra de Progresso do Tempo de Jogo (60 Minutos) */}
+        <div className="mt-6 border-2 border-white bg-zinc-800 p-1">
+          <div
+            className="h-4 bg-yellow-400 transition-all duration-300"
+            style={{ width: `${(currentMinute / 60) * 100}%` }}
+          />
+        </div>
+
+        {/* Controlos da Simulação */}
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t-2 border-zinc-700 pt-4">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsPlaying(!isPlaying)}
+              disabled={currentMinute >= 60}
+              className="border-2 border-white bg-green-500 px-4 py-2 font-black uppercase text-black hover:bg-green-400 disabled:opacity-50"
+            >
+              {isPlaying ? '⏸️ Pausar' : '▶️ Iniciar / Continuar'}
+            </button>
+
+            <button
+              onClick={handleInstantSimulate}
+              disabled={currentMinute >= 60}
+              className="border-2 border-white bg-yellow-400 px-4 py-2 font-black uppercase text-black hover:bg-yellow-300 disabled:opacity-50"
+            >
+              ⚡ Simular Instantâneo
+            </button>
+          </div>
+
+          {/* Ajuste de Velocidade */}
+          <div className="flex items-center gap-2 font-mono text-xs">
+            <span className="font-bold">Velocidade:</span>
+            <button
+              onClick={() => setSpeedMs(1000)}
+              className={`px-3 py-1 font-bold border-2 ${speedMs === 1000 ? 'bg-white text-black border-white' : 'border-zinc-600'}`}
+            >
+              1x
+            </button>
+            <button
+              onClick={() => setSpeedMs(300)}
+              className={`px-3 py-1 font-bold border-2 ${speedMs === 300 ? 'bg-white text-black border-white' : 'border-zinc-600'}`}
+            >
+              3x
+            </button>
+            <button
+              onClick={() => setSpeedMs(100)}
+              className={`px-3 py-1 font-bold border-2 ${speedMs === 100 ? 'bg-white text-black border-white' : 'border-zinc-600'}`}
+            >
+              10x
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Navegação por Separadores */}
+      <div className="flex border-b-4 border-black dark:border-white">
+        <button
+          onClick={() => setActiveTab('feed')}
+          className={`px-6 py-3 font-black uppercase border-t-4 border-l-4 border-r-4 border-black dark:border-white ${
+            activeTab === 'feed'
+              ? 'bg-yellow-400 text-black'
+              : 'bg-white text-black dark:bg-zinc-800 dark:text-white'
+          }`}
+        >
+          🎙️ Feed de Eventos ({visibleEvents.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('stats')}
+          className={`px-6 py-3 font-black uppercase border-t-4 border-l-4 border-r-4 border-black dark:border-white ${
+            activeTab === 'stats'
+              ? 'bg-yellow-400 text-black'
+              : 'bg-white text-black dark:bg-zinc-800 dark:text-white'
+          }`}
+        >
+          📊 Estatísticas dos Jogadores
+        </button>
+      </div>
+
+      {/* Conteúdo: Relato Minuto a Minuto */}
+      {activeTab === 'feed' && (
+        <div className="border-4 border-black bg-white p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:border-white dark:bg-zinc-900 dark:text-white max-h-96 overflow-y-auto space-y-3 font-mono">
+          {visibleEvents.length === 0 ? (
+            <p className="text-center font-bold text-zinc-500 py-8">
+              Clica em "Iniciar / Continuar" para começar o relato da partida.
+            </p>
+          ) : (
+            [...visibleEvents].reverse().map((event, idx) => (
+              <div
+                key={idx}
+                className={`border-2 border-black p-3 ${
+                  event.type === 'golo' || event.type === 'golo_7m'
+                    ? 'bg-green-100 dark:bg-green-950 font-black'
+                    : event.type === 'exclusao_2min'
+                    ? 'bg-red-100 dark:bg-red-950'
+                    : 'bg-zinc-50 dark:bg-zinc-800'
+                } dark:border-white`}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="bg-black text-white px-2 py-0.5 text-xs font-black dark:bg-white dark:text-black">
+                    {event.minute}'
+                  </span>
+                  <span className="text-sm font-bold">{event.description}</span>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      {/* Conteúdo: Estatísticas Finais */}
+      {activeTab === 'stats' && (
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          {/* Estatísticas Casa */}
+          <div className="border-4 border-black bg-white p-5 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:border-white dark:bg-zinc-900 dark:text-white">
+            <h3 className="font-black uppercase text-lg border-b-2 border-black pb-2 mb-3 dark:border-white">
+              {homeClub.name}
+            </h3>
+            <div className="space-y-2 font-mono text-xs">
+              {matchResult.playerStats.home.map((st) => (
+                <div key={st.playerId} className="flex justify-between border-b border-zinc-200 py-1 dark:border-zinc-800">
+                  <span className="font-bold">{st.playerName}</span>
+                  <span>
+                    ⚽ {st.goals}/{st.shots} | 🧤 {st.saves} | 🛑 {st.exclusions} (2m)
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Estatísticas Visitante */}
+          <div className="border-4 border-black bg-white p-5 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:border-white dark:bg-zinc-900 dark:text-white">
+            <h3 className="font-black uppercase text-lg border-b-2 border-black pb-2 mb-3 dark:border-white">
+              {awayClub.name}
+            </h3>
+            <div className="space-y-2 font-mono text-xs">
+              {matchResult.playerStats.away.map((st) => (
+                <div key={st.playerId} className="flex justify-between border-b border-zinc-200 py-1 dark:border-zinc-800">
+                  <span className="font-bold">{st.playerName}</span>
+                  <span>
+                    ⚽ {st.goals}/{st.shots} | 🧤 {st.saves} | 🛑 {st.exclusions} (2m)
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};

@@ -1,0 +1,173 @@
+/**
+ * 7meters - League Standings & Table Component
+ * Tabela classificativa detalhada da Liga Principal de Andebol.
+ * Calcula em tempo real a pontuação (Andebol: Vitória = 3 pts, Empate = 2 pts, Derrota = 1 pt),
+ * jogos realizados, golos marcados, golos sofridos e diferença de golos.
+ */
+
+import React from 'react';
+import { useGameStore } from '../../store/useGameStore';
+import { Club } from '../../types/club.types';
+import { MatchResult } from '../../types/match.types';
+
+export interface StandingRow {
+  clubId: string;
+  clubName: string;
+  played: number;
+  won: number;
+  drawn: number;
+  lost: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  goalDifference: number;
+  points: number;
+}
+
+interface LeagueStandingsProps {
+  completedMatches?: MatchResult[];
+  clubs?: Club[];
+}
+
+export const LeagueStandings: React.FC<LeagueStandingsProps> = ({ completedMatches = [], clubs = [] }) => {
+  const { userClub } = useGameStore();
+
+  // Lista de clubes padrão se não for fornecida via props
+  const defaultClubs: Club[] = clubs.length > 0 ? clubs : userClub ? [
+    userClub,
+    { id: 'abc_braga', name: 'ABC Braga', level: 'Nacional', budget: 150000, fanbase: 8000, stadiumCapacity: 3000 },
+    { id: 'fc_porto', name: 'FC Porto', level: 'Nacional', budget: 300000, fanbase: 25000, stadiumCapacity: 2000 },
+    { id: 'sporting_cp', name: 'Sporting CP', level: 'Nacional', budget: 300000, fanbase: 24000, stadiumCapacity: 3000 },
+    { id: 'sl_benfica', name: 'SL Benfica', level: 'Nacional', budget: 300000, fanbase: 26000, stadiumCapacity: 2500 },
+    { id: 'aguas_santas', name: 'Águas Santas', level: 'Nacional', budget: 100000, fanbase: 5000, stadiumCapacity: 1500 },
+  ] : [];
+
+  // Calcular estatísticas da tabela com base nas partidas concluídas
+  const standingsMap: Record<string, StandingRow> = {};
+
+  defaultClubs.forEach((club) => {
+    standingsMap[club.id] = {
+      clubId: club.id,
+      clubName: club.name,
+      played: 0,
+      won: 0,
+      drawn: 0,
+      lost: 0,
+      goalsFor: 0,
+      goalsAgainst: 0,
+      goalDifference: 0,
+      points: 0,
+    };
+  });
+
+  completedMatches.forEach((match) => {
+    const home = standingsMap[match.homeClubId];
+    const away = standingsMap[match.awayClubId];
+
+    if (home) {
+      home.played += 1;
+      home.goalsFor += match.homeScore;
+      home.goalsAgainst += match.awayScore;
+
+      if (match.homeScore > match.awayScore) {
+        home.won += 1;
+        home.points += 3; // Vitória no Andebol = 3 pts
+      } else if (match.homeScore === match.awayScore) {
+        home.drawn += 1;
+        home.points += 2; // Empate no Andebol = 2 pts
+      } else {
+        home.lost += 1;
+        home.points += 1; // Derrota no Andebol = 1 pt
+      }
+      home.goalDifference = home.goalsFor - home.goalsAgainst;
+    }
+
+    if (away) {
+      away.played += 1;
+      away.goalsFor += match.awayScore;
+      away.goalsAgainst += match.homeScore;
+
+      if (match.awayScore > match.homeScore) {
+        away.won += 1;
+        away.points += 3;
+      } else if (match.awayScore === match.homeScore) {
+        away.drawn += 1;
+        away.points += 2;
+      } else {
+        away.lost += 1;
+        away.points += 1;
+      }
+      away.goalDifference = away.goalsFor - away.goalsAgainst;
+    }
+  });
+
+  // Ordenação: Pontos -> Diferença de Golos -> Golos Marcados
+  const sortedStandings = Object.values(standingsMap).sort((a, b) => {
+    if (b.points !== a.points) return b.points - a.points;
+    if (b.goalDifference !== a.goalDifference) return b.goalDifference - a.goalDifference;
+    return b.goalsFor - a.goalsFor;
+  });
+
+  return (
+    <div className="w-full space-y-6">
+      {/* Cabeçalho */}
+      <div className="border-4 border-black bg-white p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] dark:border-white dark:bg-zinc-900 dark:text-white">
+        <h2 className="text-3xl font-black uppercase tracking-wider">
+          🏆 Tabela Classificativa da Liga
+        </h2>
+        <p className="mt-1 text-sm font-bold text-zinc-600 dark:text-zinc-300">
+          Pontuação Oficial de Andebol: Vitória (3 pts), Empate (2 pts), Derrota (1 pt).
+        </p>
+      </div>
+
+      {/* Tabela Brutalista */}
+      <div className="border-4 border-black bg-white p-4 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] overflow-x-auto dark:border-white dark:bg-zinc-900 dark:text-white">
+        <table className="w-full text-left font-mono border-collapse">
+          <thead>
+            <tr className="border-b-4 border-black bg-yellow-400 text-black text-xs uppercase font-black">
+              <th className="p-3 text-center">Pos</th>
+              <th className="p-3">Clube</th>
+              <th className="p-3 text-center">J</th>
+              <th className="p-3 text-center">V</th>
+              <th className="p-3 text-center">E</th>
+              <th className="p-3 text-center">D</th>
+              <th className="p-3 text-center">GM</th>
+              <th className="p-3 text-center">GS</th>
+              <th className="p-3 text-center">DG</th>
+              <th className="p-3 text-center bg-black text-white dark:bg-white dark:text-black">PTS</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sortedStandings.map((row, index) => {
+              const isUserClub = userClub && row.clubId === userClub.id;
+              return (
+                <tr
+                  key={row.clubId}
+                  className={`border-b-2 border-zinc-200 font-bold text-sm ${
+                    isUserClub ? 'bg-green-100 dark:bg-green-950 font-black' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800'
+                  }`}
+                >
+                  <td className="p-3 text-center font-black">{index + 1}º</td>
+                  <td className="p-3 uppercase">
+                    {row.clubName} {isUserClub && '⭐'}
+                  </td>
+                  <td className="p-3 text-center">{row.played}</td>
+                  <td className="p-3 text-center text-green-600 dark:text-green-400">{row.won}</td>
+                  <td className="p-3 text-center text-yellow-600 dark:text-yellow-400">{row.drawn}</td>
+                  <td className="p-3 text-center text-red-600 dark:text-red-400">{row.lost}</td>
+                  <td className="p-3 text-center">{row.goalsFor}</td>
+                  <td className="p-3 text-center">{row.goalsAgainst}</td>
+                  <td className="p-3 text-center">
+                    {row.goalDifference > 0 ? `+${row.goalDifference}` : row.goalDifference}
+                  </td>
+                  <td className="p-3 text-center font-black bg-zinc-100 text-lg dark:bg-zinc-800">
+                    {row.points}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};

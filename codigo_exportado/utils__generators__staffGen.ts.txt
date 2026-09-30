@@ -1,0 +1,99 @@
+/**
+ * 7meters - Staff Generator
+ * Gerador procedural de membros da equipa técnica e administrativa.
+ * Calibrado estritamente com as tipagens e papéis definidos no ecossistema do 7meters.
+ */
+
+import { GAME_CONFIG, STAFF_ROLES } from '../../core/constants';
+import { StaffAttributes, StaffMember, StaffRole } from '../../types/staff.types';
+import { generateRandomIdentity } from './nameGen';
+
+function getRandomInt(min: number, max: number): number {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function clampStat(val: number): number {
+  return Math.max(GAME_CONFIG.STATS_MIN, Math.min(GAME_CONFIG.STATS_MAX, Math.round(val)));
+}
+
+/**
+ * Gera atributos de staff (1 a 10) ajustados à função específica.
+ */
+function generateStaffAttributes(role: StaffRole, qualityTier: number): StaffAttributes {
+  const v = () => getRandomInt(-1, 1);
+
+  let tacticalMastery = qualityTier + v();
+  let physioEfficiency = qualityTier + v();
+  let logisticsSupport = qualityTier + v();
+  let financialAcumen = qualityTier + v();
+  let scoutingVision = qualityTier + v();
+  let leadership = qualityTier + v();
+
+  switch (role) {
+    case 'Treinador Principal':
+      tacticalMastery = qualityTier + getRandomInt(1, 2);
+      leadership = qualityTier + getRandomInt(0, 2);
+      break;
+    case 'Fisioterapeuta':
+      physioEfficiency = qualityTier + getRandomInt(1, 2);
+      break;
+    case 'Guarda-Roupa':
+      logisticsSupport = qualityTier + getRandomInt(1, 2);
+      break;
+    case 'Administrativo':
+      financialAcumen = qualityTier + getRandomInt(1, 2);
+      break;
+    case 'Diretor Desportivo':
+      scoutingVision = qualityTier + getRandomInt(1, 2);
+      leadership = qualityTier + getRandomInt(0, 2);
+      break;
+  }
+
+  return {
+    tacticalMastery: clampStat(tacticalMastery),
+    physioEfficiency: clampStat(physioEfficiency),
+    logisticsSupport: clampStat(logisticsSupport),
+    financialAcumen: clampStat(financialAcumen),
+    scoutingVision: clampStat(scoutingVision),
+    leadership: clampStat(leadership),
+  };
+}
+
+/**
+ * Gera um elemento da equipa técnica/administrativa.
+ */
+export function generateRandomStaffMember(
+  forcedRole?: StaffRole,
+  forcedTier?: number,
+  clubId: string | null = null
+): StaffMember {
+  const identity = generateRandomIdentity();
+  const role = forcedRole || STAFF_ROLES[Math.floor(Math.random() * STAFF_ROLES.length)];
+  const age = getRandomInt(32, 68);
+  const qualityRating = forcedTier || getRandomInt(3, 8);
+  const attributes = generateStaffAttributes(role, qualityRating);
+  const salary = Math.max(400, Math.round(qualityRating * 450 + getRandomInt(-100, 200)));
+
+  return {
+    id: `stf_${Math.random().toString(36).substring(2, 11)}_${Date.now()}`,
+    name: `${identity.firstName} ${identity.lastName}`,
+    country: identity.country,
+    age,
+    role,
+    qualityRating,
+    attributes,
+    salary,
+    contractYearsRemaining: getRandomInt(1, 3),
+    currentClubId: clubId,
+    isHired: clubId !== null,
+  };
+}
+
+/**
+ * Gera a equipa técnica inicial completa de um clube.
+ */
+export function generateClubStaff(clubId: string, qualityTier = 5): StaffMember[] {
+  return STAFF_ROLES.map((role) =>
+    generateRandomStaffMember(role, Math.max(1, qualityTier + getRandomInt(-1, 1)), clubId)
+  );
+}
