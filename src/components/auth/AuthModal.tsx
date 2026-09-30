@@ -4,54 +4,109 @@
  * Acesso de Administrador reservado para: rochap.filipe@gmail.com
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useGameStore, UserAccount } from '../../store/useGameStore';
-import { GAME_CONFIG } from '../../core/constants';
+import { isSupabaseConfigured, supabase } from '../../lib/supabase';
 
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccessLogin?: (user: UserAccount) => void;
+  onRecoveryRequested?: () => void;
 }
 
-type AuthMode = 'login' | 'register' | 'recovery';
+type AuthMode = 'login' | 'register' | 'recovery' | 'reset';
 
-export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccessLogin }) => {
+export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccessLogin, onRecoveryRequested }) => {
   const { setCurrentUser } = useGameStore();
 
   const [mode, setMode] = useState<AuthMode>('login');
-  const [email, setEmail] = useState<string>('rochap.filipe@gmail.com');
-  const [name, setName] = useState<string>('Filipe Rocha');
-  const [password, setPassword] = useState<string>('••••••••');
+  const [email, setEmail] = useState<string>('');
+  const [name, setName] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [recoverySent, setRecoverySent] = useState<boolean>(false);
-  const [securityCode, setSecurityCode] = useState<string>('');
   const [feedback, setFeedback] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!supabase) return;
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setMode('reset');
+        setPassword('');
+        setFeedback('Define uma nova palavra-passe para concluir a recuperação.');
+        onRecoveryRequested?.();
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [onRecoveryRequested]);
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFeedback(null);
-
-    const isAdmin = email.trim().toLowerCase() === GAME_CONFIG.ADMIN_EMAIL.toLowerCase();
-
-    if (mode === 'recovery') {
-      setRecoverySent(true);
-      setSecurityCode('7M-' + Math.floor(100000 + Math.random() * 900000));
-      setFeedback('Email de recuperação enviado com sucesso para a tua caixa de correio!');
+    if (!supabase || !isSupabaseConfigured) {
+      setFeedback('A sincronização cloud ainda não está configurada. Podes continuar a jogar com gravação local.');
       return;
     }
 
-    const user: UserAccount = {
-      email: email.trim(),
-      name: name.trim() || (isAdmin ? 'Filipe Rocha (Admin)' : 'Treinador de Andebol'),
-      isAdmin,
-      isLoggedIn: true,
-    };
+    setIsSubmitting(true);
+    try {
+      if (mode === 'recovery') {
+        const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+          redirectTo: window.location.origin,
+        });
+        if (error) throw error;
+        setRecoverySent(true);
+        setFeedback('Enviámos uma ligação de recuperação para o endereço indicado.');
+        return;
+      }
 
-    setCurrentUser(user);
-    if (onSuccessLogin) onSuccessLogin(user);
-    onClose();
+      if (mode === 'reset') {
+        const { error } = await supabase.auth.updateUser({ password });
+        if (error) throw error;
+        onClose();
+        return;
+      }
+
+      if (mode === 'register') {
+        const { data, error } = await supabase.auth.signUp({
+          email: email.trim(),
+          password,
+          options: { data: { name: name.trim() || 'Treinador de Andebol' } },
+        });
+        if (error) throw error;
+        if (!data.session) {
+          setFeedback('Conta criada. Confirma o endereço através do email enviado antes de iniciar sessão.');
+          setMode('login');
+          return;
+        }
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+        if (error) throw error;
+      }
+
+      const { data: { user: authUser }, error: userError } = await supabase.auth.getUser();
+      if (userError || !authUser) throw userError ?? new Error('Não foi possível validar a sessão.');
+      const metadataName = authUser.user_metadata?.name;
+      const user: UserAccount = {
+        id: authUser.id,
+        email: authUser.email ?? email.trim(),
+        name: typeof metadataName === 'string' && metadataName.trim()
+          ? metadataName.trim()
+          : 'Treinador de Andebol',
+        isAdmin: authUser.app_metadata?.is_admin === true,
+        isLoggedIn: true,
+      };
+      setCurrentUser(user);
+      onSuccessLogin?.(user);
+      onClose();
+    } catch (error) {
+      setFeedback(error instanceof Error ? error.message : 'Não foi possível concluir a autenticação.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -68,6 +123,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
                 {mode === 'login' && 'Acesso Treinador'}
                 {mode === 'register' && 'Novo Registo de Clube'}
                 {mode === 'recovery' && 'Recuperar Acesso'}
+                {mode === 'reset' && 'Definir Nova Palavra-passe'}
               </h2>
               <p className="text-xs text-zinc-400">
                 7meters Handball · Gestor Desportivo
@@ -82,21 +138,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
           </button>
         </div>
 
-        {/* Quick Admin fill indicator */}
-        <div className="flex items-center justify-between rounded-xl border border-zinc-800 bg-zinc-950/60 p-3 text-xs font-mono text-zinc-400">
-          <span>Admin: <strong className="text-amber-400">{GAME_CONFIG.ADMIN_EMAIL}</strong></span>
-          <button
-            type="button"
-            onClick={() => {
-              setEmail(GAME_CONFIG.ADMIN_EMAIL);
-              setName('Filipe Rocha');
-              setPassword('admin123');
-            }}
-            className="rounded-lg bg-zinc-800 px-2.5 py-1 text-xs font-semibold text-zinc-200 hover:bg-zinc-700 hover:text-white transition-colors"
-          >
-            Preencher Demo
-          </button>
-        </div>
+        {!isSupabaseConfigured && (
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-200">
+            Modo local ativo. A gravação neste dispositivo continua disponível; a sincronização entre dispositivos ainda não está configurada.
+          </div>
+        )}
 
         {feedback && (
           <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs font-semibold text-amber-300">
@@ -107,29 +153,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
         {/* Recovery Email Simulator Preview */}
         {mode === 'recovery' && recoverySent && (
           <div className="rounded-2xl border border-zinc-800 bg-zinc-950/80 p-4 font-mono text-xs space-y-2">
-            <div className="border-b border-zinc-800 pb-2 text-zinc-400">
-              📬 SIMULADOR DE EMAIL RECEBIDO:
-            </div>
-            <div className="text-zinc-300">De: apoio@7meters.pt (Serviço Central)</div>
-            <div className="text-zinc-300">Para: {email}</div>
-            <div className="font-bold text-amber-400">
-              Assunto: [7meters] Recuperação de Credenciais de Treinador
-            </div>
-            <p className="text-zinc-400">
-              Olá Treinador,<br />
-              O teu código de verificação é: <strong className="rounded bg-amber-500/20 text-amber-300 px-2 py-0.5">{securityCode}</strong>.<br />
-              Usa este código para definir uma nova palavra-passe.
-            </p>
-            <button
-              onClick={() => {
-                setMode('login');
-                setRecoverySent(false);
-                setFeedback('Código validado! Podes agora iniciar sessão.');
-              }}
-              className="mt-3 w-full rounded-xl bg-emerald-600 py-2.5 font-bold text-xs text-white hover:bg-emerald-500 transition-colors"
-            >
-              Confirmar Código e Voltar ao Login
-            </button>
+            <p className="text-zinc-300">Consulta o email enviado pelo Supabase e abre a ligação neste browser para definir a nova palavra-passe.</p>
           </div>
         )}
 
@@ -168,21 +192,23 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
             {mode !== 'recovery' && (
               <div>
                 <div className="flex justify-between items-center mb-1.5">
-                  <label className="text-xs font-semibold text-zinc-300">Palavra-passe:</label>
-                  <button
+                  <label className="text-xs font-semibold text-zinc-300">{mode === 'reset' ? 'Nova palavra-passe:' : 'Palavra-passe:'}</label>
+                  {mode === 'login' && <button
                     type="button"
                     onClick={() => {
                       setMode('recovery');
+                      setRecoverySent(false);
                       setFeedback(null);
                     }}
                     className="text-xs font-medium text-amber-400 hover:text-amber-300 transition-colors"
                   >
                     Esqueceste-te da password?
-                  </button>
+                  </button>}
                 </div>
                 <input
                   type="password"
                   required
+                  minLength={8}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full rounded-xl border border-zinc-700 bg-zinc-950 p-2.5 text-sm text-white focus:border-amber-500 focus:outline-none"
@@ -192,11 +218,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
 
             <button
               type="submit"
+              disabled={isSubmitting}
               className="w-full rounded-xl bg-amber-500 py-3 font-bold text-xs text-zinc-950 hover:bg-amber-400 active:scale-[0.98] transition-all shadow-md shadow-amber-500/20"
             >
-              {mode === 'login' && 'Entrar no Balneário'}
-              {mode === 'register' && 'Criar Conta de Treinador'}
-              {mode === 'recovery' && 'Enviar Email de Recuperação'}
+              {isSubmitting ? 'A processar...' : mode === 'login' && 'Entrar no Balneário'}
+              {!isSubmitting && mode === 'register' && 'Criar Conta de Treinador'}
+              {!isSubmitting && mode === 'recovery' && 'Enviar Email de Recuperação'}
+              {!isSubmitting && mode === 'reset' && 'Guardar Nova Palavra-passe'}
             </button>
           </form>
         )}
@@ -215,6 +243,21 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
                 className="text-amber-400 font-bold hover:text-amber-300 transition-colors"
               >
                 Registar Novo Clube
+              </button>
+            </>
+          ) : mode === 'recovery' || mode === 'reset' ? (
+            <>
+              <span>Já tens acesso?</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setMode('login');
+                  setRecoverySent(false);
+                  setFeedback(null);
+                }}
+                className="text-amber-400 font-bold hover:text-amber-300 transition-colors"
+              >
+                Voltar ao Login
               </button>
             </>
           ) : (

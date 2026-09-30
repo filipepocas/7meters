@@ -3,7 +3,8 @@
  * Interface ultra-moderna, limpa e intuitiva inspirada nas melhores aplicações de desporto e gestão.
  */
 
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
+import { Cloud, CloudOff, CircleAlert, LoaderCircle } from 'lucide-react';
 import { useGameStore, TrainingFocus } from '../store/useGameStore';
 import { BankLoanModal } from '../components/finance/BankLoanModal';
 import { MysterySponsorModal } from '../components/finance/MysterySponsorModal';
@@ -43,6 +44,7 @@ export const Dashboard: React.FC = () => {
     setTrainingFocus,
     advanceToNextWeek,
     logout,
+    cloudSaveStatus,
     completedMatchesHistory,
     recordCompletedMatch,
   } = useGameStore();
@@ -55,6 +57,7 @@ export const Dashboard: React.FC = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [isWizardOpen, setIsWizardOpen] = useState<boolean>(false);
   const [weekNotice, setWeekNotice] = useState<string | null>(null);
+  const handleRecoveryRequested = useCallback(() => setIsAuthModalOpen(true), []);
 
   const opponentClub = useMemo(() => {
     const round = leagueCalendar.find((item) => item.roundNumber === currentWeek);
@@ -131,6 +134,18 @@ export const Dashboard: React.FC = () => {
     (acc, p) => acc + (p.wage || Math.round(p.salary / 4)),
     0
   );
+  const cloudStatusLabel = {
+    local: 'Local',
+    syncing: 'A sincronizar',
+    saved: 'Cloud OK',
+    error: 'Cloud erro',
+  }[cloudSaveStatus];
+  const cloudStatusTitle = {
+    local: 'Save guardado neste dispositivo. Inicia sessão para o sincronizar entre dispositivos.',
+    syncing: 'A sincronizar a carreira com a cloud.',
+    saved: 'Carreira sincronizada com o Supabase.',
+    error: 'Falhou a sincronização. O save local continua intacto.',
+  }[cloudSaveStatus];
 
   return (
     <div className="min-h-screen bg-zinc-950 font-sans text-zinc-100 selection:bg-amber-500 selection:text-black">
@@ -210,6 +225,25 @@ export const Dashboard: React.FC = () => {
             {/* Direita: Ações Principais */}
             <div className="flex items-center gap-1.5 sm:gap-2.5">
               <PWAInstallButton />
+              <span
+                role="status"
+                aria-live="polite"
+                aria-label={cloudStatusTitle}
+                title={cloudStatusTitle}
+                className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1.5 text-[10px] font-semibold ${
+                  cloudSaveStatus === 'error'
+                    ? 'border-rose-500/30 bg-rose-500/10 text-rose-300'
+                    : cloudSaveStatus === 'saved'
+                    ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
+                    : 'border-zinc-700 bg-zinc-900 text-zinc-400'
+                }`}
+              >
+                {cloudSaveStatus === 'local' && <CloudOff size={14} aria-hidden="true" />}
+                {cloudSaveStatus === 'syncing' && <LoaderCircle size={14} className="animate-spin" aria-hidden="true" />}
+                {cloudSaveStatus === 'saved' && <Cloud size={14} aria-hidden="true" />}
+                {cloudSaveStatus === 'error' && <CircleAlert size={14} aria-hidden="true" />}
+                <span className="hidden sm:inline">{cloudStatusLabel}</span>
+              </span>
 
               {/* Botão Avançar Semana */}
               <button
@@ -694,7 +728,11 @@ export const Dashboard: React.FC = () => {
       <MysterySponsorModal isOpen={isSponsorModalOpen} onClose={() => setIsSponsorModalOpen(false)} />
       <MatchScheduleModal isOpen={isScheduleModalOpen} onClose={() => setIsScheduleModalOpen(false)} />
       {isAdminModalOpen && <AdminMatrixModal isOpen={isAdminModalOpen} onClose={() => setIsAdminModalOpen(false)} />}
-      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onRecoveryRequested={handleRecoveryRequested}
+      />
     </div>
   );
 };
