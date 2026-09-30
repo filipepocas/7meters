@@ -11,11 +11,18 @@ import { generateClubProfile } from './utils/generators/clubGen';
 import { generateSquad } from './utils/generators/squadGen';
 import { generateClubStaff } from './utils/generators/staffGen';
 import { generateLeagueCalendar } from './engine/calendarEngine';
+import { startCloudGameSaveSync } from './lib/cloudGameSaveSync';
 
 export const App: React.FC = () => {
-  const { userClub, setUserClub, setUserSquad, setUserStaff, setLeagueCalendar } = useGameStore();
+  const { userClub, cloudReady, setUserClub, setUserSquad, setUserStaff, setAllClubs, setLeagueCalendar } = useGameStore();
 
   useEffect(() => {
+    startCloudGameSaveSync();
+  }, []);
+
+  useEffect(() => {
+    if (!cloudReady) return;
+
     // Se ainda não existir clube em cache no navegador, inicializar clube fundador padrão
     if (!userClub) {
       const demoClub = generateClubProfile('Lousada Andebol Clube', 'Andebol 1 (Divisão de Honra)', 1500000, 12);
@@ -38,6 +45,7 @@ export const App: React.FC = () => {
       setUserClub(demoClub);
       setUserSquad(demoSquad);
       setUserStaff(demoStaff);
+      setAllClubs(allLeagueClubs);
       setLeagueCalendar(calendar);
     } else if (userClub.arena?.imagePath && userClub.arena.imagePath.includes('unsplash')) {
       // Migração automática para as imagens modernas 3D geradas por IA
@@ -49,7 +57,15 @@ export const App: React.FC = () => {
         },
       });
     }
-  }, [userClub, setUserClub, setUserSquad, setUserStaff, setLeagueCalendar]);
+  }, [cloudReady, userClub, setUserClub, setUserSquad, setUserStaff, setAllClubs, setLeagueCalendar]);
+
+  if (!cloudReady) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-zinc-950 text-sm font-semibold text-zinc-300">
+        A verificar a sessão e a carreira guardada...
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-zinc-100 font-sans text-black dark:bg-zinc-950 dark:text-white">

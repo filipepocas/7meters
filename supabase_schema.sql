@@ -71,10 +71,59 @@ ALTER TABLE public.clubs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.players ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.matches ENABLE ROW LEVEL SECURITY;
 
--- Políticas de Acesso Público para Leitura/Escrita
-CREATE POLICY "Acesso Total para Leitura de Clubes" ON public.clubs FOR SELECT USING (true);
-CREATE POLICY "Acesso Total para Escrita de Clubes" ON public.clubs FOR ALL USING (true);
+-- Remove políticas públicas da versão anterior. Estas tabelas ainda não são
+-- usadas pelo cliente; não devem permitir leitura/escrita anónima.
+DROP POLICY IF EXISTS "Acesso Total para Leitura de Clubes" ON public.clubs;
+DROP POLICY IF EXISTS "Acesso Total para Escrita de Clubes" ON public.clubs;
+DROP POLICY IF EXISTS "Acesso Total para Jogadores" ON public.players;
+DROP POLICY IF EXISTS "Acesso Total para Partidas" ON public.matches;
+DROP POLICY IF EXISTS "Acesso Total para Profiles" ON public.profiles;
 
-CREATE POLICY "Acesso Total para Jogadores" ON public.players FOR ALL USING (true);
-CREATE POLICY "Acesso Total para Partidas" ON public.matches FOR ALL USING (true);
-CREATE POLICY "Acesso Total para Profiles" ON public.profiles FOR ALL USING (true);
+-- Uma linha JSON por carreira. Upsert mantém o consumo e o crescimento da BD baixos.
+CREATE TABLE IF NOT EXISTS public.game_saves (
+  user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  state JSONB NOT NULL CHECK (jsonb_typeof(state) = 'object'),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.game_saves ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.game_saves FROM anon, PUBLIC;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.game_saves TO authenticated;
+
+DROP POLICY IF EXISTS "Users can read own game save" ON public.game_saves;
+DROP POLICY IF EXISTS "Users can create own game save" ON public.game_saves;
+DROP POLICY IF EXISTS "Users can update own game save" ON public.game_saves;
+DROP POLICY IF EXISTS "Users can delete own game save" ON public.game_saves;
+
+CREATE POLICY "Users can read own game save"
+  ON public.game_saves FOR SELECT
+  USING ((SELECT auth.uid()) = user_id);
+
+CREATE POLICY "Users can create own game save"
+  ON public.game_saves FOR INSERT
+  WITH CHECK ((SELECT auth.uid()) = user_id);
+
+CREATE POLICY "Users can update own game save"
+  ON public.game_saves FOR UPDATE
+  USING ((SELECT auth.uid()) = user_id)
+  WITH CHECK ((SELECT auth.uid()) = user_id);
+
+CREATE POLICY "Users can delete own game save"
+  ON public.game_saves FOR DELETE
+  USING ((SELECT auth.uid()) = user_id);
+
+CREATE OR REPLACE FUNCTION public.set_game_save_updated_at()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SET search_path = ''
+AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS game_saves_updated_at ON public.game_saves;
+CREATE TRIGGER game_saves_updated_at
+  BEFORE UPDATE ON public.game_saves
+  FOR EACH ROW EXECUTE FUNCTION public.set_game_save_updated_at();

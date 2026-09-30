@@ -17,10 +17,12 @@ import { acceptBankLoan, generateBankLoanProposal, processWeeklyLoanPayment } fr
 import { RoundFixtures } from '../engine/calendarEngine';
 import { respondToMatchProposal } from '../engine/onlineEngine';
 import { confirmSponsorContract } from '../utils/generators/sponsorGen';
-import { GAME_CONFIG, STORAGE_KEYS } from '../core/constants';
+import { STORAGE_KEYS } from '../core/constants';
 import { generateRandomPlayer } from '../utils/generators/playerGen';
+import { isSupabaseConfigured, supabase } from '../lib/supabase';
 
 export interface UserAccount {
+  id: string;
   email: string;
   name: string;
   isAdmin: boolean;
@@ -29,12 +31,18 @@ export interface UserAccount {
 }
 
 export type TrainingFocus = 'remate_exterior' | 'defesa_coletiva' | 'recuperacao_fisica' | 'aceleracao_tatica';
+export type CloudSaveStatus = 'local' | 'syncing' | 'saved' | 'error';
 
 interface GameState {
   // Autenticação
   currentUser: UserAccount | null;
   setCurrentUser: (user: UserAccount | null) => void;
   logout: () => void;
+  saveOwnerId: string | null;
+  cloudReady: boolean;
+  cloudSaveStatus: CloudSaveStatus;
+  setCloudReady: (ready: boolean) => void;
+  setCloudSaveStatus: (status: CloudSaveStatus) => void;
 
   // Calendário e Temporadas
   currentWeek: number;
@@ -92,7 +100,7 @@ interface GameState {
   resetGameUniverse: () => void;
 }
 
-type SavedGameState = Pick<
+export type SavedGameState = Pick<
   GameState,
   | 'currentWeek'
   | 'currentSeason'
@@ -116,42 +124,101 @@ type SavedGameState = Pick<
 
 const SAVE_VERSION = 1;
 
-function readSavedGame(): Partial<SavedGameState> {
+export function isValidSavedGameState(value: unknown): value is SavedGameState {
+  if (typeof value !== 'object' || value === null) return false;
+  const state = value as Partial<SavedGameState>;
+  return (
+    Number.isInteger(state.currentWeek) &&
+    Number.isInteger(state.currentSeason) &&
+    typeof state.currentDivision === 'string' &&
+    typeof state.currentGroup === 'string' &&
+    Number.isFinite(state.boardConfidence) &&
+    Number.isFinite(state.fanSatisfaction) &&
+    Array.isArray(state.userSquad) &&
+    Array.isArray(state.userStaff) &&
+    Array.isArray(state.youthAcademy) &&
+    Array.isArray(state.allClubs) &&
+    Array.isArray(state.leagueCalendar) &&
+    Array.isArray(state.activeLoans) &&
+    Array.isArray(state.activeSponsors) &&
+    Array.isArray(state.onlineProposals) &&
+    Array.isArray(state.completedMatchesHistory) &&
+    Number.isFinite(state.unpaidSalariesWeeks) &&
+    (state.userClub === null || (typeof state.userClub === 'object' && state.userClub !== undefined))
+  );
+}
+
+export interface LocalGameSave {
+  savedAt: string;
+  ownerId: string | null;
+  legacy: boolean;
+  state: SavedGameState;
+}
+
+function localSaveKey(ownerId: string | null): string {
+  return ownerId ? `${STORAGE_KEYS.GAME_SAVE}:${ownerId}` : STORAGE_KEYS.GAME_SAVE;
+}
+
+function parseLocalGameSave(rawSave: string | null, expectedOwnerId: string | null): LocalGameSave | null {
+  if (!rawSave) return null;
+
   try {
-    const rawSave = window.localStorage.getItem(STORAGE_KEYS.GAME_SAVE);
-    if (!rawSave) return {};
-
     const envelope: unknown = JSON.parse(rawSave);
-    if (typeof envelope !== 'object' || envelope === null) return {};
+    if (typeof envelope !== 'object' || envelope === null) return null;
 
-    const save = envelope as { version?: unknown; state?: unknown };
-    if (save.version !== SAVE_VERSION || typeof save.state !== 'object' || save.state === null) return {};
+    const save = envelope as { version?: unknown; savedAt?: unknown; ownerId?: unknown; state?: unknown };
+    if (save.version !== SAVE_VERSION || !isValidSavedGameState(save.state)) return null;
 
-    const state = save.state as Partial<SavedGameState>;
-    if (
-      !Number.isInteger(state.currentWeek) ||
-      !Number.isInteger(state.currentSeason) ||
-      !Array.isArray(state.userSquad) ||
-      !Array.isArray(state.userStaff) ||
-      !Array.isArray(state.youthAcademy) ||
-      !Array.isArray(state.allClubs) ||
-      !Array.isArray(state.leagueCalendar) ||
-      !Array.isArray(state.activeLoans) ||
-      !Array.isArray(state.activeSponsors) ||
-      !Array.isArray(state.onlineProposals) ||
-      !Array.isArray(state.completedMatchesHistory) ||
-      (state.userClub !== null && (typeof state.userClub !== 'object' || state.userClub === undefined))
-    ) {
-      return {};
-    }
+    const legacy = typeof save.savedAt !== 'string' || !Number.isFinite(Date.parse(save.savedAt));
+    const ownerId = typeof save.ownerId === 'string' ? save.ownerId : null;
+    if (ownerId !== expectedOwnerId) return null;
 
-    return state;
+    return {
+      savedAt: legacy ? new Date(0).toISOString() : save.savedAt as string,
+      ownerId,
+      legacy,
+      state: save.state,
+    };
   } catch {
-    return {};
+    return null;
   }
 }
 
-const savedGame = typeof window === 'undefined' ? {} : readSavedGame();
+export function readLocalGameSave(ownerId: string | null = null): LocalGameSave | null {
+  try {
+    const accountSave = parseLocalGameSave(window.localStorage.getItem(localSaveKey(ownerId)), ownerId);
+    if (accountSave || !ownerId) return accountSave;
+
+    // Migrate an older guest save only when an account has no local save of its own.
+    return parseLocalGameSave(window.localStorage.getItem(STORAGE_KEYS.GAME_SAVE), null);
+  } catch {
+    return null;
+  }
+}
+
+export function writeLocalGameSave(
+  state: SavedGameState,
+  savedAt = new Date().toISOString(),
+  ownerId: string | null = null
+): void {
+  try {
+    window.localStorage.setItem(
+      localSaveKey(ownerId),
+      JSON.stringify({ version: SAVE_VERSION, savedAt, ownerId, state })
+    );
+  } catch {
+    // Browser storage limits must not interrupt a game action.
+  }
+}
+
+export function removeLocalGameSave(ownerId: string | null = null): void {
+  try {
+    window.localStorage.removeItem(localSaveKey(ownerId));
+  } catch {}
+}
+
+const localSave = typeof window === 'undefined' ? null : readLocalGameSave();
+const savedGame: Partial<SavedGameState> = localSave?.state ?? {};
 
 const DEFAULT_ADMIN_RULES: AdminRule[] = [
   {
@@ -205,19 +272,10 @@ const DEFAULT_ADMIN_RULES: AdminRule[] = [
 ];
 
 export const useGameStore = create<GameState>((set, get) => ({
-  currentUser: (() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEYS.AUTH_USER);
-      if (stored) return JSON.parse(stored);
-    } catch {}
-    // Padrão: Admin logado se coincidir com o email rochap.filipe@gmail.com
-    return {
-      email: GAME_CONFIG.ADMIN_EMAIL,
-      name: 'Filipe Rocha',
-      isAdmin: true,
-      isLoggedIn: true,
-    };
-  })(),
+  currentUser: null,
+  saveOwnerId: null,
+  cloudReady: !isSupabaseConfigured,
+  cloudSaveStatus: 'local',
 
   currentWeek: savedGame.currentWeek ?? 1,
   currentSeason: savedGame.currentSeason ?? 1,
@@ -246,19 +304,23 @@ export const useGameStore = create<GameState>((set, get) => ({
   adminRules: DEFAULT_ADMIN_RULES,
   dynamicEventsPool: [],
 
-  setCurrentUser: (user) => {
-    if (user) {
-      localStorage.setItem(STORAGE_KEYS.AUTH_USER, JSON.stringify(user));
-    } else {
-      localStorage.removeItem(STORAGE_KEYS.AUTH_USER);
-    }
-    set({ currentUser: user });
-  },
+  setCurrentUser: (user) =>
+    set((state) => ({
+      currentUser: user,
+      saveOwnerId: user?.id ?? state.saveOwnerId,
+      cloudReady:
+        isSupabaseConfigured && user && user.id !== state.saveOwnerId
+          ? false
+          : state.cloudReady,
+    })),
 
   logout: () => {
-    localStorage.removeItem(STORAGE_KEYS.AUTH_USER);
+    void supabase?.auth.signOut();
     set({ currentUser: null });
   },
+
+  setCloudReady: (ready) => set({ cloudReady: ready }),
+  setCloudSaveStatus: (status) => set({ cloudSaveStatus: status }),
 
   setTrainingFocus: (focus) => set({ trainingFocus: focus }),
 
@@ -619,7 +681,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   resetGameUniverse: () => {
     try {
       localStorage.removeItem(STORAGE_KEYS.CLUB_STATE);
-      localStorage.removeItem(STORAGE_KEYS.GAME_SAVE);
+      removeLocalGameSave(get().saveOwnerId);
     } catch {}
     set({
       userClub: null,
@@ -647,11 +709,10 @@ export const useGameStore = create<GameState>((set, get) => ({
 
 useGameStore.subscribe((state) => {
   if (typeof window === 'undefined') return;
+  if (isSupabaseConfigured && !state.cloudReady) return;
 
   if (!state.userClub) {
-    try {
-      window.localStorage.removeItem(STORAGE_KEYS.GAME_SAVE);
-    } catch {}
+    removeLocalGameSave(state.saveOwnerId);
     return;
   }
 
@@ -676,12 +737,29 @@ useGameStore.subscribe((state) => {
     unpaidSalariesWeeks: state.unpaidSalariesWeeks,
   };
 
-  try {
-    window.localStorage.setItem(
-      STORAGE_KEYS.GAME_SAVE,
-      JSON.stringify({ version: SAVE_VERSION, state: savedState })
-    );
-  } catch {
-    // Browser storage limits must not interrupt a game action.
-  }
+  writeLocalGameSave(savedState, new Date().toISOString(), state.saveOwnerId);
 });
+
+export function getSavedGameSnapshot(): SavedGameState {
+  const state = useGameStore.getState();
+  return {
+    currentWeek: state.currentWeek,
+    currentSeason: state.currentSeason,
+    currentDivision: state.currentDivision,
+    currentGroup: state.currentGroup,
+    boardConfidence: state.boardConfidence,
+    fanSatisfaction: state.fanSatisfaction,
+    trainingFocus: state.trainingFocus,
+    userClub: state.userClub,
+    userSquad: state.userSquad,
+    userStaff: state.userStaff,
+    youthAcademy: state.youthAcademy,
+    allClubs: state.allClubs,
+    leagueCalendar: state.leagueCalendar,
+    activeLoans: state.activeLoans,
+    activeSponsors: state.activeSponsors,
+    onlineProposals: state.onlineProposals,
+    completedMatchesHistory: state.completedMatchesHistory,
+    unpaidSalariesWeeks: state.unpaidSalariesWeeks,
+  };
+}
