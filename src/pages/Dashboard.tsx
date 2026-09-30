@@ -1,18 +1,10 @@
 /**
- * 7meters - Central Game Dashboard & Hub
- * Painel principal do treinador de andebol com suporte integral para:
- * - Visão Geral do Clube, Foto Interior do Pavilhão, Camisola Oficial
- * - Prancheta Tática & 7 Inicial (1 GR + 6 Jogadores)
- * - Simulação de Partida ao Vivo com Foto da Arena, Time-out e Shot Chart
- * - Instalações, Expansão do Pavilhão, Academia Sub-18 e Treino
- * - Mercado de Transferências & Leilões
- * - Classificação Oficial da Liga e Séries
- * - Crédito BCP e Patrocínios Mistério
- * - Painel de Administrador e Instalação PWA
+ * 7meters - Modern Handball Manager Dashboard
+ * Interface ultra-moderna, limpa e intuitiva inspirada nas melhores aplicações de desporto e gestão.
  */
 
 import React, { useState } from 'react';
-import { useGameStore } from '../store/useGameStore';
+import { useGameStore, TrainingFocus } from '../store/useGameStore';
 import { BankLoanModal } from '../components/finance/BankLoanModal';
 import { MysterySponsorModal } from '../components/finance/MysterySponsorModal';
 import { MatchScheduleModal } from '../components/multiplayer/MatchScheduleModal';
@@ -45,6 +37,8 @@ export const Dashboard: React.FC = () => {
     currentGroup,
     boardConfidence,
     fanSatisfaction,
+    trainingFocus,
+    setTrainingFocus,
     advanceToNextWeek,
     logout,
   } = useGameStore();
@@ -69,26 +63,30 @@ export const Dashboard: React.FC = () => {
 
   const handleAdvanceWeek = () => {
     advanceToNextWeek();
-    setWeekNotice(`Semana ${currentWeek} concluída! Despesas de salários debitadas, patrocínios recebidos e sessões de treino processadas.`);
+    setWeekNotice(`Semana ${currentWeek} concluída com sucesso! Despesas salariais debitadas e treinos aplicados.`);
     setTimeout(() => setWeekNotice(null), 5000);
   };
 
   if (!userClub) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-100 dark:bg-zinc-950 p-4 font-mono">
-        <div className="max-w-md w-full border-4 border-black bg-yellow-400 p-8 text-black shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] text-center space-y-4">
-          <div className="text-4xl">🤾</div>
-          <h1 className="text-3xl font-black uppercase tracking-tight">
-            7meters Handball
-          </h1>
-          <p className="text-xs font-bold">
-            Simulador de Andebol Profissional tipo Elifoot. Começa agora a construção da tua equipa de raiz!
-          </p>
+      <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-950 p-4 font-sans text-white">
+        <div className="max-w-md w-full rounded-3xl border border-zinc-800 bg-zinc-900/90 p-8 shadow-2xl backdrop-blur-xl text-center space-y-6">
+          <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-500/10 border border-amber-500/20 text-3xl">
+            🤾
+          </div>
+          <div>
+            <h1 className="text-3xl font-extrabold tracking-tight text-white">
+              7meters Handball
+            </h1>
+            <p className="mt-2 text-sm text-zinc-400">
+              Gestor de Andebol Profissional. Cria o teu clube de raiz, contrata craques e lidera rumo à glória europeia!
+            </p>
+          </div>
           <button
             onClick={() => setIsWizardOpen(true)}
-            className="w-full border-4 border-black bg-black p-3 font-black uppercase text-white hover:bg-zinc-800 shadow-[4px_4px_0px_0px_rgba(255,255,255,1)]"
+            className="w-full rounded-xl bg-amber-500 py-3.5 px-4 font-semibold text-black hover:bg-amber-400 active:scale-[0.98] transition-all shadow-lg shadow-amber-500/20"
           >
-            ⭐ Criar Equipa de Raiz
+            ⭐ Construir Equipa de Raiz
           </button>
         </div>
 
@@ -103,317 +101,503 @@ export const Dashboard: React.FC = () => {
       ? userClub.arena.imagePath
       : '/src/assets/images/arena_champions_cup_1790774601559.jpg';
 
+  // Médias do plantel
+  const avgOvr = Math.round(
+    userSquad.reduce((acc, p) => acc + (p.overallRating || 60), 0) / (userSquad.length || 1)
+  );
+  const avgEnergy = Math.round(
+    userSquad.reduce((acc, p) => acc + (p.energyLevel || 100), 0) / (userSquad.length || 1)
+  );
+  const weeklyWages = userSquad.reduce(
+    (acc, p) => acc + (p.wage || Math.round(p.salary / 4)),
+    0
+  );
+
   return (
-    <div className="min-h-screen bg-zinc-100 p-3 text-black dark:bg-zinc-950 dark:text-white md:p-6 font-sans">
+    <div className="min-h-screen bg-zinc-950 font-sans text-zinc-100 selection:bg-amber-500 selection:text-black">
       <OfflineIndicator />
 
-      {/* Top Bar Utilitária */}
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b-2 border-zinc-300 pb-2 dark:border-zinc-800 font-mono text-xs">
-        <div className="flex items-center gap-2">
-          <span className="font-black bg-yellow-400 text-black px-2 py-0.5">
-            Época {currentSeason} • Semana {currentWeek}
-          </span>
-          <span className="hidden sm:inline font-bold text-zinc-600 dark:text-zinc-400">
-            {currentDivision} ({currentGroup})
-          </span>
-        </div>
+      {/* TOP NAVIGATION BAR MODERNA (Glassmorphism Sticky) */}
+      <header className="sticky top-0 z-40 border-b border-zinc-800/80 bg-zinc-950/85 backdrop-blur-xl shadow-lg">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          {/* Linha Superior: Logo, Identidade do Clube, Saldo e Ações Rápidas */}
+          <div className="flex h-16 items-center justify-between gap-4">
+            {/* Esquerda: Identidade do Clube */}
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 text-zinc-950 shadow-md">
+                <span className="font-mono text-sm font-black tracking-tighter">7M</span>
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-base font-bold text-white tracking-tight sm:text-lg">
+                    {userClub.name}
+                  </h1>
+                  <span className="rounded-md bg-zinc-800/90 px-2 py-0.5 font-mono text-[10px] font-semibold text-zinc-300 border border-zinc-700/60">
+                    {userClub.shortName}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-zinc-400">
+                  <span className="text-amber-400 font-medium">Época {currentSeason} · Jornada {currentWeek}</span>
+                  <span>·</span>
+                  <span className="hidden sm:inline text-zinc-400">{currentDivision}</span>
+                </div>
+              </div>
+            </div>
 
-        <div className="flex items-center gap-2">
-          <PWAInstallButton />
+            {/* Centro: Indicadores Rápidos de Estado */}
+            <div className="hidden lg:flex items-center gap-3">
+              {/* Tesouraria */}
+              <div className="flex items-center gap-2.5 rounded-2xl border border-zinc-800 bg-zinc-900/60 px-3.5 py-1.5 shadow-sm">
+                <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400 text-xs font-bold">
+                  €
+                </div>
+                <div>
+                  <div className="text-[10px] uppercase font-semibold text-zinc-400 tracking-wider">Tesouraria</div>
+                  <div className="font-mono text-xs font-bold text-white tabular-nums">
+                    €{userClub.budget.toLocaleString()}
+                  </div>
+                </div>
+              </div>
 
-          {currentUser?.isAdmin && (
-            <button
-              onClick={() => setIsAdminModalOpen(true)}
-              className="border-2 border-black bg-yellow-400 px-3 py-1 font-black uppercase text-black hover:bg-yellow-300 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
-              title="Painel Mestre de Administração"
-            >
-              👑 Admin Matriz
-            </button>
-          )}
+              {/* Confiança da Direção */}
+              <div className="flex items-center gap-2.5 rounded-2xl border border-zinc-800 bg-zinc-900/60 px-3.5 py-1.5 shadow-sm">
+                <div className={`flex h-7 w-7 items-center justify-center rounded-xl text-xs font-bold ${
+                  boardConfidence > 60 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'
+                }`}>
+                  🏛️
+                </div>
+                <div>
+                  <div className="text-[10px] uppercase font-semibold text-zinc-400 tracking-wider">Presidência</div>
+                  <div className="font-mono text-xs font-bold text-white tabular-nums">
+                    {boardConfidence}%
+                  </div>
+                </div>
+              </div>
 
-          {currentUser ? (
-            <div className="flex items-center gap-2">
-              <span className="font-bold hidden md:inline">
-                {currentUser.name} {currentUser.isAdmin && '(Admin)'}
-              </span>
+              {/* Energia Média do Plantel */}
+              <div className="flex items-center gap-2.5 rounded-2xl border border-zinc-800 bg-zinc-900/60 px-3.5 py-1.5 shadow-sm">
+                <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-blue-500/10 text-blue-400 text-xs font-bold">
+                  ⚡
+                </div>
+                <div>
+                  <div className="text-[10px] uppercase font-semibold text-zinc-400 tracking-wider">Energia Plantel</div>
+                  <div className="font-mono text-xs font-bold text-white tabular-nums">
+                    {avgEnergy}%
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Direita: Ações Principais */}
+            <div className="flex items-center gap-2.5">
+              <PWAInstallButton />
+
+              {/* Botão Avançar Semana */}
               <button
-                onClick={logout}
-                className="border border-black bg-zinc-200 px-2 py-1 uppercase font-bold text-[10px] hover:bg-zinc-300 dark:bg-zinc-800 dark:border-white"
+                onClick={handleAdvanceWeek}
+                className="hidden sm:inline-flex items-center gap-1.5 rounded-xl border border-zinc-700 bg-zinc-800/80 px-3 py-1.5 text-xs font-semibold text-zinc-200 hover:bg-zinc-700 hover:text-white transition-all active:scale-[0.98]"
               >
-                Sair
+                <span>⏩ Avançar Semana</span>
               </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => setIsAuthModalOpen(true)}
-              className="border border-black bg-black text-white px-2 py-1 uppercase font-bold text-[10px] hover:bg-zinc-800 dark:bg-white dark:text-black"
-            >
-              Entrar
-            </button>
-          )}
 
-          <button
-            onClick={() => setIsWizardOpen(true)}
-            className="border border-black bg-white px-2 py-1 uppercase font-bold text-[10px] hover:bg-zinc-100 dark:bg-zinc-800 dark:border-white"
-            title="Construir outro clube de raiz"
-          >
-            Novo Clube
-          </button>
-        </div>
-      </div>
+              {/* Botão Jogar Partida */}
+              <button
+                onClick={() => setActiveTab('match')}
+                className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-1.5 text-xs font-bold text-zinc-950 hover:bg-amber-400 active:scale-[0.98] transition-all shadow-md shadow-amber-500/20"
+              >
+                <span>🤾 Jogar Partida</span>
+              </button>
 
-      {weekNotice && (
-        <div className="mb-4 border-4 border-black bg-green-300 p-3 font-mono font-black text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-          🔔 {weekNotice}
-        </div>
-      )}
+              {currentUser?.isAdmin && (
+                <button
+                  onClick={() => setIsAdminModalOpen(true)}
+                  className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-2 text-amber-400 hover:bg-amber-500/20"
+                  title="Painel Mestre Admin"
+                >
+                  👑
+                </button>
+              )}
 
-      {/* CABEÇALHO PRINCIPAL DO CLUBE (Estilo Brutalista / Elifoot) */}
-      <header className="mb-6 border-4 border-black bg-yellow-400 p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] dark:border-white dark:bg-yellow-500 dark:text-black">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            {/* Visual da Camisola do Clube */}
-            <JerseyVisual
-              jersey={{
-                id: 1,
-                primaryColor: userClub.colors?.primary || '#003399',
-                secondaryColor: userClub.colors?.secondary || '#FFCC00',
-                patternType: 'stripes_vertical',
-                chestSponsorName: '7METERS',
-              }}
-              size="lg"
-            />
-
-            <div>
-              <span className="border-2 border-black bg-black px-2 py-0.5 font-mono text-[11px] font-black uppercase text-white">
-                {userClub.shortName} • {userClub.level}
-              </span>
-              <h1 className="mt-1 text-3xl md:text-5xl font-black uppercase tracking-tight">
-                {userClub.name}
-              </h1>
-              <p className="font-mono text-xs font-bold mt-0.5">
-                🏟️ {userClub.arena.name} (Cap. {arenaCap.toLocaleString()} lugares) • Sede: {userClub.city || 'Portugal'}
-              </p>
+              {/* Perfil / Sair */}
+              <div className="flex items-center pl-1 border-l border-zinc-800">
+                {currentUser ? (
+                  <button
+                    onClick={logout}
+                    className="rounded-lg px-2.5 py-1 text-xs font-medium text-zinc-400 hover:text-white hover:bg-zinc-800/60"
+                  >
+                    Sair
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setIsAuthModalOpen(true)}
+                    className="rounded-lg px-2.5 py-1 text-xs font-medium text-amber-400 hover:text-amber-300"
+                  >
+                    Entrar
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Widgets Financeiros e Plantel */}
-          <div className="flex flex-wrap gap-2 font-mono">
-            <div className="border-2 border-black bg-white px-4 py-2 font-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
-              <span className="text-[10px] text-zinc-500 uppercase block">Tesouraria</span>
-              <span className={`text-xl ${userClub.budget >= 0 ? 'text-black' : 'text-red-600'}`}>
-                €{userClub.budget.toLocaleString()}
-              </span>
-            </div>
-
-            <div className="border-2 border-black bg-white px-4 py-2 font-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
-              <span className="text-[10px] text-zinc-500 uppercase block">Plantel</span>
-              <span className="text-xl">{userSquad.length} Jogadores</span>
-            </div>
-
-            <button
-              onClick={handleAdvanceWeek}
-              className="border-2 border-black bg-black text-white px-4 py-2 font-black uppercase text-xs hover:bg-zinc-800 shadow-[3px_3px_0px_0px_rgba(255,255,255,1)] flex flex-col justify-center items-center"
-            >
-              <span>Avançar</span>
-              <span className="text-[10px] text-yellow-400">Semana →</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Botões de Ação Rápida */}
-        <div className="mt-5 flex flex-wrap gap-2 border-t-2 border-black pt-4">
-          <button
-            onClick={() => setIsLoanModalOpen(true)}
-            className="border-2 border-black bg-white px-3 py-1.5 font-mono text-xs font-black uppercase hover:bg-zinc-100 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
-          >
-            🏛️ Crédito BCP
-          </button>
-          <button
-            onClick={() => setIsSponsorModalOpen(true)}
-            className="border-2 border-black bg-purple-600 px-3 py-1.5 font-mono text-xs font-black uppercase text-white hover:bg-purple-700 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
-          >
-            🎁 Patrocínio Mistério
-          </button>
-          <button
-            onClick={() => setIsScheduleModalOpen(true)}
-            className="border-2 border-black bg-black px-3 py-1.5 font-mono text-xs font-black uppercase text-white hover:bg-zinc-800 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
-          >
-            🌐 Jogos Online
-          </button>
+          {/* Linha Inferior: Barra de Navegação por Separadores Modernos */}
+          <nav className="flex space-x-1 overflow-x-auto py-2 scrollbar-none border-t border-zinc-800/40">
+            {[
+              { id: 'overview', label: 'Visão Geral', icon: '📊' },
+              { id: 'match', label: 'Partida ao Vivo', icon: '🤾', badge: 'Matchday' },
+              { id: 'squad', label: 'Plantel & Atletas', icon: '👥' },
+              { id: 'tactics', label: 'Tática & 7 Inicial', icon: '📋' },
+              { id: 'market', label: 'Transferências', icon: '🏪' },
+              { id: 'facilities', label: 'Pavilhão & Clube', icon: '🏟️' },
+              { id: 'league', label: 'Classificação', icon: '🏆' },
+            ].map((tab) => {
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as ActiveTab)}
+                  className={`group relative flex shrink-0 items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-medium transition-all ${
+                    isActive
+                      ? 'bg-zinc-800/90 text-white shadow-sm ring-1 ring-zinc-700'
+                      : 'text-zinc-400 hover:bg-zinc-900/60 hover:text-zinc-200'
+                  }`}
+                >
+                  <span className="text-sm">{tab.icon}</span>
+                  <span>{tab.label}</span>
+                  {tab.badge && (
+                    <span className="ml-1 rounded-full bg-amber-500/20 px-1.5 py-0.2 text-[9px] font-bold text-amber-300 border border-amber-500/30">
+                      {tab.badge}
+                    </span>
+                  )}
+                  {isActive && (
+                    <span className="absolute bottom-0 left-3 right-3 h-0.5 bg-gradient-to-r from-amber-500 to-amber-300 rounded-full" />
+                  )}
+                </button>
+              );
+            })}
+          </nav>
         </div>
       </header>
 
-      {/* Navegação por Separadores */}
-      <nav className="mb-6 flex flex-wrap border-b-4 border-black dark:border-white">
-        {[
-          { id: 'overview', label: '🏠 Visão Geral' },
-          { id: 'match', label: '🤾 Partida ao Vivo' },
-          { id: 'squad', label: '🤾 Plantel (Molecular)' },
-          { id: 'tactics', label: '📋 Tática & 7 Inicial' },
-          { id: 'market', label: '🏪 Transferências' },
-          { id: 'facilities', label: '🏗️ Pavilhão & Academia' },
-          { id: 'league', label: '🏆 Classificação' },
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id as ActiveTab)}
-            className={`border-t-4 border-l-4 border-r-4 border-black px-4 py-2.5 font-black uppercase text-xs shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] dark:border-white ${
-              activeTab === tab.id
-                ? 'bg-yellow-400 text-black'
-                : 'bg-white text-black hover:bg-zinc-200 dark:bg-zinc-900 dark:text-white dark:hover:bg-zinc-800'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </nav>
+      {/* AVISOS E NOTIFICAÇÕES */}
+      {weekNotice && (
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-4">
+          <div className="flex items-center justify-between rounded-xl border border-emerald-500/30 bg-emerald-950/40 p-3.5 text-xs text-emerald-200 backdrop-blur">
+            <div className="flex items-center gap-2">
+              <span className="text-base">🔔</span>
+              <span className="font-medium">{weekNotice}</span>
+            </div>
+            <button
+              onClick={() => setWeekNotice(null)}
+              className="text-emerald-400 hover:text-white text-xs font-bold"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
 
-      {/* Conteúdo Conforme o Separador */}
-      <main className="space-y-6">
+      {/* CONTEÚDO PRINCIPAL */}
+      <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
         {activeTab === 'overview' && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Coluna 1 & 2: Pavilhão com Imagem e Plantel */}
-            <div className="md:col-span-2 space-y-6">
-              {/* O Pavilhão do Clube com Foto Interior */}
-              <div className="border-4 border-black bg-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:border-white dark:bg-zinc-900 dark:text-white overflow-hidden">
-                <div className="relative h-72 w-full overflow-hidden bg-zinc-950">
-                  <img
-                    src={arenaImg}
-                    alt={userClub.arena.name}
-                    referrerPolicy="no-referrer"
-                    className="w-full h-full object-cover filter brightness-105 contrast-105"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/40 to-transparent" />
-                  <div className="absolute top-4 right-4 bg-black/80 backdrop-blur border border-yellow-400 text-yellow-400 px-3 py-1 font-mono text-[11px] font-black uppercase">
-                    3D Render • Vista das Bancadas
-                  </div>
-                  <div className="absolute bottom-4 left-4 text-white font-mono">
-                    <span className="bg-yellow-400 text-black px-2 py-0.5 text-xs font-black uppercase">
-                      Pavilhão Oficial
-                    </span>
-                    <h3 className="text-2xl font-black uppercase mt-1">{userClub.arena.name}</h3>
-                    <p className="text-xs text-zinc-300">
-                      Lotação: {arenaCap.toLocaleString()} Lugares • Bilhete Médio: €{(userClub.arena.ticketPrice || 12).toFixed(2)}
-                    </p>
-                  </div>
+          <div className="space-y-6">
+            {/* 1. MATCHDAY HERO CARD (Moderno com Backdrop 3D do Pavilhão de Andebol) */}
+            <div className="relative overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900 shadow-xl">
+              <div className="relative h-64 md:h-80 w-full overflow-hidden">
+                <img
+                  src={arenaImg}
+                  alt={userClub.arena.name}
+                  referrerPolicy="no-referrer"
+                  className="w-full h-full object-cover filter brightness-[0.65] contrast-[1.1] transition-transform duration-700 hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/60 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-r from-zinc-950/80 via-transparent to-zinc-950/80" />
+
+                {/* Badge Superior */}
+                <div className="absolute top-4 left-4 flex items-center gap-2">
+                  <span className="rounded-full bg-amber-500/20 backdrop-blur-md border border-amber-500/40 px-3 py-1 font-mono text-[11px] font-bold text-amber-300">
+                    Jornada {currentWeek} · Andebol 1
+                  </span>
+                  <span className="hidden sm:inline-flex rounded-full bg-zinc-900/80 backdrop-blur-md border border-zinc-700 px-3 py-1 text-[11px] text-zinc-300">
+                    🏟️ {userClub.arena.name}
+                  </span>
                 </div>
 
-                <div className="p-4 grid grid-cols-3 gap-2 font-mono text-center text-xs">
-                  <div className="border-2 border-black p-2 bg-zinc-50 dark:bg-zinc-800 dark:border-white">
-                    <div className="text-zinc-500 uppercase text-[10px]">Adeptos Base</div>
-                    <div className="font-black text-sm">{userClub.fanbase.toLocaleString()}</div>
-                  </div>
-                  <div className="border-2 border-black p-2 bg-zinc-50 dark:bg-zinc-800 dark:border-white">
-                    <div className="text-zinc-500 uppercase text-[10px]">Manutenção</div>
-                    <div className="font-black text-sm">€{userClub.arena.rentalOrMaintenanceCost?.toLocaleString()}/mês</div>
-                  </div>
-                  <div className="border-2 border-black p-2 bg-zinc-50 dark:bg-zinc-800 dark:border-white">
-                    <div className="text-zinc-500 uppercase text-[10px]">Prestígio</div>
-                    <div className="font-black text-sm">⭐ {userClub.arena.prestigeBonus || 6}/10</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Resumo do Plantel */}
-              <div className="border-4 border-black bg-white p-5 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:border-white dark:bg-zinc-900 dark:text-white">
-                <div className="flex justify-between items-center border-b-4 border-black pb-3 mb-4 dark:border-white">
-                  <h3 className="text-xl font-black uppercase">
-                    🤾 Plantel Principal ({userSquad.length} Atletas)
-                  </h3>
-                  <button
-                    onClick={() => setActiveTab('tactics')}
-                    className="border-2 border-black bg-yellow-400 px-3 py-1 font-mono text-xs font-black uppercase text-black hover:bg-yellow-300"
-                  >
-                    Definir 7 Inicial →
-                  </button>
-                </div>
-
-                <div className="space-y-2 font-mono text-xs max-h-80 overflow-y-auto pr-1">
-                  {userSquad.map((player) => (
-                    <div
-                      key={player.id}
-                      className="flex items-center justify-between border-b border-zinc-200 py-1.5 dark:border-zinc-800"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="bg-black text-white px-2 py-0.5 text-[10px] font-black dark:bg-white dark:text-black">
-                          {player.position}
-                        </span>
-                        <span className="font-bold">{player.name}</span>
-                        <span className="text-zinc-400">({player.age} anos)</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span>Moral: {player.moral}/10</span>
-                        <span>Stamina: {player.energyLevel}%</span>
-                        <span className="font-black text-blue-600 dark:text-blue-400">
-                          OVR {player.overallRating}
-                        </span>
+                {/* Confronto Central */}
+                <div className="absolute inset-x-0 bottom-6 px-4 md:px-8 flex flex-col md:flex-row items-center justify-between gap-6">
+                  <div className="flex items-center justify-center gap-6 text-center md:text-left w-full md:w-auto">
+                    {/* Casa */}
+                    <div>
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-amber-400">
+                        Equipa da Casa
+                      </span>
+                      <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight">
+                        {userClub.name}
+                      </h2>
+                      <div className="text-xs text-zinc-400 font-mono mt-0.5">
+                        OVR Plantel: {avgOvr} · Forma: V-V-E
                       </div>
                     </div>
-                  ))}
+
+                    <div className="flex flex-col items-center px-4">
+                      <span className="text-xs font-mono font-bold text-zinc-500 uppercase tracking-widest">VS</span>
+                      <span className="text-[10px] text-zinc-400 font-mono mt-1">60 Minutos</span>
+                    </div>
+
+                    {/* Visitante */}
+                    <div>
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-blue-400">
+                        Visitante
+                      </span>
+                      <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight">
+                        {opponentClub.name}
+                      </h2>
+                      <div className="text-xs text-zinc-400 font-mono mt-0.5">
+                        OVR Plantel: 72 · Nível: Divisão de Honra
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Ação Primária: Entrar na Partida */}
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setActiveTab('tactics')}
+                      className="rounded-xl border border-zinc-700 bg-zinc-900/80 backdrop-blur px-4 py-2.5 text-xs font-semibold text-zinc-200 hover:bg-zinc-800 transition-all"
+                    >
+                      Ajustar Tática
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('match')}
+                      className="rounded-xl bg-amber-500 px-6 py-2.5 text-sm font-bold text-zinc-950 hover:bg-amber-400 active:scale-[0.98] transition-all shadow-lg shadow-amber-500/20"
+                    >
+                      🎮 Jogar Partida ao Vivo
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Coluna 3: Próximo Jogo e Estatísticas da Direção */}
-            <div className="space-y-6">
-              {/* Próximo Jogo */}
-              <div className="border-4 border-black bg-white p-5 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:border-white dark:bg-zinc-900 dark:text-white font-mono">
-                <span className="bg-yellow-400 text-black px-2 py-0.5 text-xs font-black uppercase">
-                  Próxima Jornada
-                </span>
-                <h3 className="text-xl font-black uppercase mt-2">{userClub.name} vs {opponentClub.name}</h3>
-                <p className="text-xs text-zinc-500 mt-1">
-                  Estádio: {userClub.arena.name} • Andebol 1
-                </p>
-
-                <button
-                  onClick={() => setActiveTab('match')}
-                  className="mt-4 w-full border-4 border-black bg-green-500 p-3 font-black uppercase text-white hover:bg-green-600 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-center transition-all animate-pulse"
-                >
-                  🤾 Entrar em Campo / Jogar!
-                </button>
-              </div>
-
-              {/* Confiança da Direção & Pressão dos Adeptos */}
-              <div className="border-4 border-black bg-white p-5 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:border-white dark:bg-zinc-900 dark:text-white font-mono text-xs">
-                <h3 className="text-base font-black uppercase border-b-2 border-black pb-2 mb-3 dark:border-white">
-                  📊 Confiança & Pressão Social
-                </h3>
-                <div className="space-y-3">
-                  <div>
-                    <div className="flex justify-between font-bold mb-1">
-                      <span>Confiança da Direção:</span>
-                      <span className="font-black">{boardConfidence}%</span>
-                    </div>
-                    <div className="h-3 border-2 border-black bg-zinc-200">
-                      <div className="h-full bg-green-500" style={{ width: `${boardConfidence}%` }} />
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between font-bold mb-1">
-                      <span>Satisfação dos Adeptos:</span>
-                      <span className="font-black">{fanSatisfaction}%</span>
-                    </div>
-                    <div className="h-3 border-2 border-black bg-zinc-200">
-                      <div className="h-full bg-blue-500" style={{ width: `${fanSatisfaction}%` }} />
-                    </div>
-                  </div>
+            {/* 2. KPIS ESTATÍSTICOS EM GRELHA ELEGANTE */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {/* Tesouraria */}
+              <div className="rounded-2xl border border-zinc-800/80 bg-zinc-900/60 p-4 backdrop-blur hover:border-zinc-700 transition-all">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-zinc-400">Orçamento do Clube</span>
+                  <span className="text-base text-emerald-400">💰</span>
+                </div>
+                <div className="mt-2 text-xl font-bold text-white font-mono tabular-nums">
+                  €{userClub.budget.toLocaleString()}
+                </div>
+                <div className="mt-1 flex items-center justify-between text-[11px] text-zinc-400">
+                  <span>Folha salarial:</span>
+                  <span className="text-zinc-300 font-mono">€{weeklyWages.toLocaleString()}/sem</span>
                 </div>
               </div>
 
-              {/* Informação PWA & Instalação */}
-              <div className="border-4 border-black bg-yellow-300 p-4 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] font-mono text-xs text-black">
-                <div className="font-black uppercase mb-1">📱 PWA Instalável no Dispositivo</div>
-                <p className="font-bold">
-                  Podes instalar o 7meters no teu telemóvel ou computador para jogar sem navegador, com suporte offline e acesso rápido ao teu clube!
-                </p>
+              {/* Confiança da Presidência */}
+              <div className="rounded-2xl border border-zinc-800/80 bg-zinc-900/60 p-4 backdrop-blur hover:border-zinc-700 transition-all">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-zinc-400">Confiança da Direção</span>
+                  <span className="text-base">🏛️</span>
+                </div>
+                <div className="mt-2 text-xl font-bold text-white font-mono tabular-nums">
+                  {boardConfidence}%
+                </div>
+                <div className="mt-2 h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all ${
+                      boardConfidence > 60 ? 'bg-emerald-500' : boardConfidence > 30 ? 'bg-amber-500' : 'bg-red-500'
+                    }`}
+                    style={{ width: `${boardConfidence}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Condição do Sete Inicial */}
+              <div className="rounded-2xl border border-zinc-800/80 bg-zinc-900/60 p-4 backdrop-blur hover:border-zinc-700 transition-all">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-zinc-400">Força Média (OVR)</span>
+                  <span className="text-base text-blue-400">⚡</span>
+                </div>
+                <div className="mt-2 text-xl font-bold text-blue-400 font-mono tabular-nums">
+                  {avgOvr} / 100
+                </div>
+                <div className="mt-1 flex items-center justify-between text-[11px] text-zinc-400">
+                  <span>Energia média:</span>
+                  <span className="text-emerald-400 font-bold font-mono">{avgEnergy}%</span>
+                </div>
+              </div>
+
+              {/* Foco de Treino Semanal */}
+              <div className="rounded-2xl border border-zinc-800/80 bg-zinc-900/60 p-4 backdrop-blur hover:border-zinc-700 transition-all">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-zinc-400">Treino da Semana</span>
+                  <span className="text-base">🏋️</span>
+                </div>
+                <div className="mt-2 text-sm font-bold text-amber-300 truncate">
+                  {trainingFocus === 'remate_exterior'
+                    ? '🎯 Finalização & GR'
+                    : trainingFocus === 'defesa_coletiva'
+                    ? '🛡️ Foco Tático'
+                    : trainingFocus === 'recuperacao_fisica'
+                    ? '💤 Descanso Total'
+                    : '⚡ Carga Física'}
+                </div>
+                <div className="mt-1">
+                  <select
+                    value={trainingFocus}
+                    onChange={(e) => setTrainingFocus(e.target.value as TrainingFocus)}
+                    className="w-full bg-zinc-800 text-[11px] font-medium text-zinc-300 border border-zinc-700 rounded-lg p-1"
+                  >
+                    <option value="recuperacao_fisica">💤 Descanso Total (100% Energia)</option>
+                    <option value="remate_exterior">🎯 Finalização & GR (+Remate)</option>
+                    <option value="defesa_coletiva">🛡️ Foco Tático (+Defesa)</option>
+                    <option value="aceleracao_tatica">⚡ Carga Física (+Estamina)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* 3. DUAS COLUNAS PRINCIPAIS: PLANTEL TITULAR & CENTRO DE OPERAÇÕES */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Coluna 1 & 2: O Sete Inicial Escalado e Prontidão */}
+              <div className="lg:col-span-2 rounded-3xl border border-zinc-800 bg-zinc-900/70 p-6 backdrop-blur">
+                <div className="flex items-center justify-between border-b border-zinc-800 pb-4 mb-4">
+                  <div>
+                    <h3 className="text-lg font-bold text-white tracking-tight">
+                      🤾 Sete Inicial Recomendado
+                    </h3>
+                    <p className="text-xs text-zinc-400">
+                      Os atletas titulares escalados para o próximo embate de andebol.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setActiveTab('squad')}
+                    className="text-xs font-semibold text-amber-400 hover:text-amber-300"
+                  >
+                    Ver Todo o Plantel ({userSquad.length}) →
+                  </button>
+                </div>
+
+                <div className="space-y-2.5">
+                  {userSquad.slice(0, 7).map((player, index) => {
+                    const isTired = player.energyLevel < 50;
+                    return (
+                      <div
+                        key={player.id}
+                        className="flex items-center justify-between rounded-xl border border-zinc-800/80 bg-zinc-950/40 p-3 hover:border-zinc-700 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-zinc-800 text-xs font-bold text-zinc-300 font-mono">
+                            {index + 1}
+                          </span>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-sm text-white">{player.name}</span>
+                              <span className="rounded bg-zinc-800 px-1.5 py-0.5 text-[10px] font-bold text-zinc-300">
+                                {player.position}
+                              </span>
+                            </div>
+                            <div className="text-[11px] text-zinc-400">
+                              {player.age} anos · Salário: €{(player.wage || 300).toLocaleString()}/sem
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-4 text-xs font-mono">
+                          <div className="text-right">
+                            <span className="text-[10px] text-zinc-500 uppercase block">Energia</span>
+                            <span className={`font-bold tabular-nums ${isTired ? 'text-red-400 animate-pulse' : 'text-emerald-400'}`}>
+                              ⚡ {player.energyLevel}%
+                            </span>
+                          </div>
+
+                          <div className="text-right pl-3 border-l border-zinc-800">
+                            <span className="text-[10px] text-zinc-500 uppercase block">OVR</span>
+                            <span className="font-bold text-blue-400 text-sm tabular-nums">
+                              {player.overallRating}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Coluna 3: Ações Rápidas de Gestão & Pavilhão */}
+              <div className="space-y-6">
+                {/* O Pavilhão da Casa */}
+                <div className="rounded-3xl border border-zinc-800 bg-zinc-900/70 p-6 backdrop-blur">
+                  <h3 className="text-base font-bold text-white tracking-tight mb-2">
+                    🏟️ Pavilhão Oficial
+                  </h3>
+                  <div className="relative h-36 w-full rounded-2xl overflow-hidden border border-zinc-800 mb-3">
+                    <img
+                      src={arenaImg}
+                      alt={userClub.arena.name}
+                      referrerPolicy="no-referrer"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-transparent" />
+                    <span className="absolute bottom-2 left-2 text-xs font-bold text-white font-mono">
+                      {userClub.arena.name}
+                    </span>
+                  </div>
+
+                  <div className="space-y-2 text-xs text-zinc-300 border-t border-zinc-800 pt-3">
+                    <div className="flex justify-between">
+                      <span className="text-zinc-400">Lotação:</span>
+                      <strong className="font-mono">{arenaCap.toLocaleString()} Lugares</strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-zinc-400">Preço do Bilhete:</span>
+                      <strong className="font-mono">€{(userClub.arena.ticketPrice || 12).toFixed(2)}</strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-zinc-400">Manutenção:</span>
+                      <strong className="font-mono">€{(userClub.arena.rentalOrMaintenanceCost || 1200).toLocaleString()}/mês</strong>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => setActiveTab('facilities')}
+                    className="mt-4 w-full rounded-xl border border-zinc-700 bg-zinc-800 py-2 text-xs font-semibold text-zinc-200 hover:bg-zinc-700 transition-colors"
+                  >
+                    Obras & Expansão de Bancadas →
+                  </button>
+                </div>
+
+                {/* Serviços Financeiros */}
+                <div className="rounded-3xl border border-zinc-800 bg-zinc-900/70 p-6 backdrop-blur space-y-3">
+                  <h3 className="text-base font-bold text-white tracking-tight">
+                    💼 Finanças & Parcerias
+                  </h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => setIsLoanModalOpen(true)}
+                      className="rounded-xl border border-zinc-700 bg-zinc-800/80 p-3 text-left hover:bg-zinc-800 transition-colors"
+                    >
+                      <span className="text-lg block">🏦</span>
+                      <span className="text-xs font-bold text-white block mt-1">Crédito BCP</span>
+                      <span className="text-[10px] text-zinc-400">Linha de liquidez</span>
+                    </button>
+
+                    <button
+                      onClick={() => setIsSponsorModalOpen(true)}
+                      className="rounded-xl border border-zinc-700 bg-zinc-800/80 p-3 text-left hover:bg-zinc-800 transition-colors"
+                    >
+                      <span className="text-lg block">🤝</span>
+                      <span className="text-xs font-bold text-white block mt-1">Patrocínios</span>
+                      <span className="text-[10px] text-zinc-400">Injeção de capital</span>
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         )}
 
+        {/* Separadores Internos */}
         {activeTab === 'squad' && <SquadManagementView />}
 
         {activeTab === 'tactics' && <TacticsView />}
@@ -428,44 +612,43 @@ export const Dashboard: React.FC = () => {
           />
         )}
 
-        {activeTab === 'facilities' && <FacilitiesView />}
-
         {activeTab === 'market' && <TransferMarket />}
+
+        {activeTab === 'facilities' && <FacilitiesView />}
 
         {activeTab === 'league' && <LeagueStandings completedMatches={completedMatches} />}
       </main>
 
       {/* AVISO DE DESPEDIMENTO (GAME OVER) SE CONFIANÇA DA DIREÇÃO CHEGAR A 0% */}
       {boardConfidence <= 0 && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 font-mono">
-          <div className="w-full max-w-md border-4 border-red-600 bg-white p-8 text-black shadow-[10px_10px_0px_0px_rgba(220,38,38,1)] text-center space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 backdrop-blur-md">
+          <div className="w-full max-w-md rounded-3xl border border-red-500/40 bg-zinc-900 p-8 text-center space-y-4 shadow-2xl">
             <div className="text-5xl">🛑</div>
-            <h2 className="text-3xl font-black uppercase text-red-600">
-              FOSTE DESPEDIDO!
+            <h2 className="text-2xl font-black text-red-500 uppercase tracking-tight">
+              Foste Despedido!
             </h2>
-            <p className="text-xs font-bold text-zinc-700">
-              A direção do <strong>{userClub.name}</strong> perdeu toda a confiança no teu projeto desportivo após os maus resultados. A rescisão foi comunicada à imprensa.
+            <p className="text-xs text-zinc-400">
+              A direção do <strong>{userClub.name}</strong> perdeu a confiança no teu projeto desportivo após os maus resultados.
             </p>
             <button
               onClick={() => {
                 useGameStore.getState().resetGameUniverse();
                 setIsWizardOpen(true);
               }}
-              className="w-full border-4 border-black bg-red-600 p-3 font-black uppercase text-white hover:bg-red-700 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+              className="w-full rounded-xl bg-red-600 p-3 text-sm font-bold text-white hover:bg-red-500 transition-colors"
             >
-              🔄 Começar de Novo com Outro Clube
+              🔄 Recomeçar com Outro Clube
             </button>
           </div>
         </div>
       )}
 
-      {/* Modais */}
+      {/* Modais Utilitários */}
       <BankLoanModal isOpen={isLoanModalOpen} onClose={() => setIsLoanModalOpen(false)} />
       <MysterySponsorModal isOpen={isSponsorModalOpen} onClose={() => setIsSponsorModalOpen(false)} />
       <MatchScheduleModal isOpen={isScheduleModalOpen} onClose={() => setIsScheduleModalOpen(false)} />
-      <AdminMatrixModal isOpen={isAdminModalOpen} onClose={() => setIsAdminModalOpen(false)} />
+      {isAdminModalOpen && <AdminMatrixModal isOpen={isAdminModalOpen} onClose={() => setIsAdminModalOpen(false)} />}
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
-      {isWizardOpen && <ClubCreationWizard onComplete={() => setIsWizardOpen(false)} />}
     </div>
   );
 };

@@ -55,31 +55,36 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-      <div className="w-full max-w-lg border-4 border-black bg-white p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] dark:bg-zinc-900 dark:border-white dark:text-white">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md">
+      <div className="w-full max-w-lg rounded-3xl border border-zinc-800 bg-zinc-900 p-6 text-white shadow-2xl space-y-5">
         {/* Header */}
-        <div className="flex items-center justify-between border-b-4 border-black pb-4 dark:border-white">
-          <div className="flex items-center gap-2">
-            <span className="border-2 border-black bg-yellow-400 px-2 py-0.5 text-xs font-black uppercase text-black">
-              7meters Handball
-            </span>
-            <h2 className="text-2xl font-black uppercase">
-              {mode === 'login' && 'Acesso Treinador'}
-              {mode === 'register' && 'Novo Registo de Clube'}
-              {mode === 'recovery' && 'Recuperar Password'}
-            </h2>
+        <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 border border-amber-500/20 text-lg">
+              🤾
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-white tracking-tight">
+                {mode === 'login' && 'Acesso Treinador'}
+                {mode === 'register' && 'Novo Registo de Clube'}
+                {mode === 'recovery' && 'Recuperar Acesso'}
+              </h2>
+              <p className="text-xs text-zinc-400">
+                7meters Handball · Gestor Desportivo
+              </p>
+            </div>
           </div>
           <button
             onClick={onClose}
-            className="border-2 border-black bg-red-500 px-3 py-1 font-mono text-sm font-black text-white hover:bg-red-600 dark:border-white"
+            className="rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-xs font-semibold text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors"
           >
-            X
+            ✕
           </button>
         </div>
 
         {/* Quick Admin fill indicator */}
-        <div className="my-3 flex items-center justify-between border-2 border-dashed border-black bg-yellow-100 p-2 font-mono text-xs dark:bg-yellow-950 dark:border-white">
-          <span>Admin do Sistema: <strong>{GAME_CONFIG.ADMIN_EMAIL}</strong></span>
+        <div className="flex items-center justify-between rounded-xl border border-zinc-800 bg-zinc-950/60 p-3 text-xs font-mono text-zinc-400">
+          <span>Admin: <strong className="text-amber-400">{GAME_CONFIG.ADMIN_EMAIL}</strong></span>
           <button
             type="button"
             onClick={() => {
@@ -87,34 +92,33 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
               setName('Filipe Rocha');
               setPassword('admin123');
             }}
-            className="border border-black bg-white px-2 py-0.5 font-bold uppercase hover:bg-zinc-200 dark:bg-zinc-800"
+            className="rounded-lg bg-zinc-800 px-2.5 py-1 text-xs font-semibold text-zinc-200 hover:bg-zinc-700 hover:text-white transition-colors"
           >
-            Preencher Admin
+            Preencher Demo
           </button>
         </div>
 
         {feedback && (
-          <div className="mb-4 border-2 border-black bg-blue-100 p-3 font-bold text-blue-900 dark:bg-blue-950 dark:text-blue-200 dark:border-white">
+          <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs font-semibold text-amber-300">
             📢 {feedback}
           </div>
         )}
 
         {/* Recovery Email Simulator Preview */}
         {mode === 'recovery' && recoverySent && (
-          <div className="mb-4 border-4 border-black bg-zinc-50 p-4 font-mono text-xs dark:bg-zinc-800 dark:border-white">
-            <div className="border-b-2 border-black pb-2 mb-2 font-bold text-zinc-500 dark:text-zinc-400">
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-950/80 p-4 font-mono text-xs space-y-2">
+            <div className="border-b border-zinc-800 pb-2 text-zinc-400">
               📬 SIMULADOR DE EMAIL RECEBIDO:
             </div>
-            <div className="font-bold">De: apoio@7meters.pt (Serviço Central de Andebol)</div>
-            <div className="font-bold">Para: {email}</div>
-            <div className="font-black text-sm my-2 text-yellow-600 dark:text-yellow-400">
-              Assunto: [7meters] Recuperação de Credenciais de Treinador - Pavilhão Central
+            <div className="text-zinc-300">De: apoio@7meters.pt (Serviço Central)</div>
+            <div className="text-zinc-300">Para: {email}</div>
+            <div className="font-bold text-amber-400">
+              Assunto: [7meters] Recuperação de Credenciais de Treinador
             </div>
-            <p className="text-zinc-700 dark:text-zinc-300">
+            <p className="text-zinc-400">
               Olá Treinador,<br />
-              Recebemos o pedido de redefinição de acesso ao teu clube de andebol no 7meters.<br />
-              O teu código de verificação é: <strong className="text-black bg-yellow-300 px-2 py-1 dark:text-black">{securityCode}</strong>.<br />
-              Usa este código para definir uma nova palavra-passe e voltar ao banco de suplentes!
+              O teu código de verificação é: <strong className="rounded bg-amber-500/20 text-amber-300 px-2 py-0.5">{securityCode}</strong>.<br />
+              Usa este código para definir uma nova palavra-passe.
             </p>
             <button
               onClick={() => {
@@ -122,7 +126,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
                 setRecoverySent(false);
                 setFeedback('Código validado! Podes agora iniciar sessão.');
               }}
-              className="mt-3 w-full border-2 border-black bg-green-500 py-1 font-black uppercase text-white hover:bg-green-600"
+              className="mt-3 w-full rounded-xl bg-emerald-600 py-2.5 font-bold text-xs text-white hover:bg-emerald-500 transition-colors"
             >
               Confirmar Código e Voltar ao Login
             </button>
@@ -133,7 +137,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
           <form onSubmit={handleSubmit} className="space-y-4">
             {mode === 'register' && (
               <div>
-                <label className="block text-xs font-black uppercase mb-1">
+                <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
                   Nome do Treinador / Presidente:
                 </label>
                 <input
@@ -141,14 +145,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full border-2 border-black p-2.5 font-mono text-sm font-bold dark:border-white dark:bg-zinc-800 dark:text-white"
+                  className="w-full rounded-xl border border-zinc-700 bg-zinc-950 p-2.5 text-sm text-white focus:border-amber-500 focus:outline-none"
                   placeholder="Ex: Carlos Resende"
                 />
               </div>
             )}
 
             <div>
-              <label className="block text-xs font-black uppercase mb-1">
+              <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
                 Endereço de Email:
               </label>
               <input
@@ -156,22 +160,22 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full border-2 border-black p-2.5 font-mono text-sm font-bold dark:border-white dark:bg-zinc-800 dark:text-white"
+                className="w-full rounded-xl border border-zinc-700 bg-zinc-950 p-2.5 text-sm text-white focus:border-amber-500 focus:outline-none"
                 placeholder="treinador@clube.pt"
               />
             </div>
 
             {mode !== 'recovery' && (
               <div>
-                <div className="flex justify-between items-center mb-1">
-                  <label className="text-xs font-black uppercase">Palavra-passe:</label>
+                <div className="flex justify-between items-center mb-1.5">
+                  <label className="text-xs font-semibold text-zinc-300">Palavra-passe:</label>
                   <button
                     type="button"
                     onClick={() => {
                       setMode('recovery');
                       setFeedback(null);
                     }}
-                    className="text-xs font-bold text-blue-600 hover:underline dark:text-blue-400"
+                    className="text-xs font-medium text-amber-400 hover:text-amber-300 transition-colors"
                   >
                     Esqueceste-te da password?
                   </button>
@@ -181,14 +185,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full border-2 border-black p-2.5 font-mono text-sm font-bold dark:border-white dark:bg-zinc-800 dark:text-white"
+                  className="w-full rounded-xl border border-zinc-700 bg-zinc-950 p-2.5 text-sm text-white focus:border-amber-500 focus:outline-none"
                 />
               </div>
             )}
 
             <button
               type="submit"
-              className="w-full border-4 border-black bg-yellow-400 p-3 font-black uppercase tracking-wider text-black hover:bg-yellow-300 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all dark:border-white"
+              className="w-full rounded-xl bg-amber-500 py-3 font-bold text-xs text-zinc-950 hover:bg-amber-400 active:scale-[0.98] transition-all shadow-md shadow-amber-500/20"
             >
               {mode === 'login' && 'Entrar no Balneário'}
               {mode === 'register' && 'Criar Conta de Treinador'}
@@ -198,7 +202,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
         )}
 
         {/* Alternar modos */}
-        <div className="mt-6 flex justify-between border-t-2 border-black pt-4 font-mono text-xs font-bold dark:border-white">
+        <div className="flex justify-between border-t border-zinc-800 pt-4 text-xs font-medium text-zinc-400">
           {mode === 'login' ? (
             <>
               <span>Ainda não tens equipa?</span>
@@ -208,7 +212,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
                   setMode('register');
                   setFeedback(null);
                 }}
-                className="text-blue-600 font-black uppercase hover:underline dark:text-blue-400"
+                className="text-amber-400 font-bold hover:text-amber-300 transition-colors"
               >
                 Registar Novo Clube
               </button>
@@ -222,7 +226,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
                   setMode('login');
                   setFeedback(null);
                 }}
-                className="text-blue-600 font-black uppercase hover:underline dark:text-blue-400"
+                className="text-amber-400 font-bold hover:text-amber-300 transition-colors"
               >
                 Voltar ao Login
               </button>

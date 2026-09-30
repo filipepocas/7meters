@@ -32,24 +32,24 @@ export const PWAInstallButton: React.FC = () => {
       <>
         <button
           onClick={() => setShowIOSGuide(true)}
-          className="flex items-center gap-2 border-2 border-black bg-yellow-400 px-3 py-1.5 font-mono text-xs font-black uppercase text-black hover:bg-yellow-300 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all"
+          className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-700 bg-zinc-800/80 px-3 py-1.5 text-xs font-semibold text-zinc-200 hover:bg-zinc-700 hover:text-white transition-all active:scale-[0.98]"
         >
-          <span className="text-sm">🍎</span>
-          Instalar no iOS
+          <span>🍎</span>
+          <span>Instalar no iOS</span>
         </button>
 
         {showIOSGuide && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-            <div className="w-full max-w-sm border-4 border-black bg-white p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] dark:bg-zinc-900 dark:border-white dark:text-white">
-              <h3 className="text-lg font-black uppercase">Instalar no iPhone / iPad</h3>
-              <p className="mt-3 text-sm font-bold text-zinc-600 dark:text-zinc-300">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md">
+            <div className="w-full max-w-sm rounded-3xl border border-zinc-800 bg-zinc-900 p-6 text-white shadow-2xl space-y-4">
+              <h3 className="text-base font-bold text-white">Instalar no iPhone / iPad</h3>
+              <p className="text-xs text-zinc-300 leading-relaxed">
                 1. Toca no botão de <strong>Partilhar</strong> (ícone de quadrado com seta) na barra do Safari.<br />
                 2. Desce e seleciona <strong>"Adicionar ao Ecrã Principal"</strong>.<br />
                 3. Abre o <strong>7meters</strong> como app a partir do teu ecrã!
               </p>
               <button
                 onClick={() => setShowIOSGuide(false)}
-                className="mt-5 w-full border-2 border-black bg-black py-2 font-black uppercase text-white hover:bg-zinc-800"
+                className="w-full rounded-xl bg-amber-500 py-2.5 font-bold text-xs text-zinc-950 hover:bg-amber-400"
               >
                 Entendido
               </button>
@@ -63,10 +63,10 @@ export const PWAInstallButton: React.FC = () => {
   return (
     <button
       onClick={() => alert('O 7meters está pronto para instalação PWA. No teu browser (Chrome, Edge ou Safari), clica no ícone de instalar na barra de endereço ou "Adicionar ao Ecrã Principal".')}
-      className="flex items-center gap-2 border-2 border-black bg-zinc-100 px-3 py-1.5 font-mono text-xs font-black uppercase text-black hover:bg-zinc-200 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all dark:bg-zinc-800 dark:text-white dark:border-white"
+      className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-700 bg-zinc-800/80 px-3 py-1.5 text-xs font-semibold text-zinc-200 hover:bg-zinc-700 hover:text-white transition-all active:scale-[0.98]"
     >
       <span>📱</span>
-      PWA App
+      <span>Instalar App</span>
     </button>
   );
 };

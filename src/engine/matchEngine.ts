@@ -17,7 +17,7 @@ import { Player } from '../types/player.types';
 import { Referee } from '../types/referee.types';
 
 export interface TacticalSettings {
-  defenseSystem: '6-0' | '5-1' | '3-3' | '4-2' | '3-2-1' | '6:0' | '5:1';
+  defenseSystem: '6-0' | '5-1' | '3-3' | '4-2' | '3-2-1' | '6:0' | '5:1' | '3:3' | '4:2';
   attackPace: 'lento' | 'normal' | 'fastbreak' | 'Contra-Ataque Alucinante' | 'Ataque Organizado Paciente';
   aggressiveness: 'moderada' | 'intensa' | 'limite';
   offensiveFocus?: 'Remates Exteriores (9m)' | 'Entradas do Pivô (6m)' | 'Infiltrações das Pontas (Alas)' | 'Equilibrado';

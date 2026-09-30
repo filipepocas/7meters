@@ -66,38 +66,39 @@ export const MatchScheduleModal: React.FC<MatchScheduleModalProps> = ({ isOpen, 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-      <div className="w-full max-w-3xl border-4 border-black bg-white p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] dark:bg-zinc-900 dark:border-white dark:text-white">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md">
+      <div className="w-full max-w-3xl rounded-3xl border border-zinc-800 bg-zinc-900 p-6 text-white shadow-2xl space-y-5">
         
         {/* Cabeçalho */}
-        <div className="flex items-center justify-between border-b-4 border-black pb-4 dark:border-white">
-          <div className="flex items-center gap-2">
-            <span className="bg-black text-white px-2 py-0.5 font-mono text-xs font-black uppercase dark:bg-white dark:text-black">
-              Multiplayer P2P
-            </span>
-            <h2 className="text-2xl font-black uppercase tracking-wider">
-              🌐 Horários de Jogos Online
-            </h2>
+        <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 border border-blue-500/20 text-lg">
+              🌐
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-white tracking-tight">
+                Horários de Jogos Online · P2P
+              </h2>
+              <p className="text-xs text-zinc-400">
+                Combina os horários dos confrontos com outros treinadores humanos.
+              </p>
+            </div>
           </div>
           <button
             onClick={onClose}
-            className="border-2 border-black bg-red-500 px-3 py-1 font-mono text-sm font-black text-white hover:bg-red-600 dark:border-white"
+            className="rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-xs font-semibold text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors"
           >
-            X
+            ✕
           </button>
         </div>
 
-        <p className="my-3 text-sm font-bold text-zinc-600 dark:text-zinc-300">
-          Combina os horários das partidas com outros treinadores humanos. Em caso de ausência injustificada no dia do jogo, o motor do 7meters ativa o modo <strong>Auto-Piloto</strong> para simular o resultado sem atrasar a liga.
-        </p>
-
         {actionFeedback && (
-          <div className="my-3 border-2 border-black bg-blue-100 p-3 text-center font-bold text-blue-900 dark:bg-blue-950 dark:text-blue-200 dark:border-white font-mono text-xs">
+          <div className="rounded-xl border border-blue-500/40 bg-blue-950/40 p-3 text-center text-xs font-semibold text-blue-300">
             📢 {actionFeedback}
           </div>
         )}
 
-        <div className="my-4 space-y-3 max-h-80 overflow-y-auto pr-1">
+        <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
           {proposalsList.map((proposal) => {
             const isSelected = selectedProposal?.proposalId === proposal.proposalId;
             const scheduledDate = new Date(proposal.proposedTimestamp);
@@ -105,41 +106,41 @@ export const MatchScheduleModal: React.FC<MatchScheduleModalProps> = ({ isOpen, 
             return (
               <div
                 key={proposal.proposalId}
-                className={`border-4 p-4 transition-all font-mono ${
+                className={`rounded-2xl border p-4 transition-all ${
                   isSelected
-                    ? 'border-yellow-400 bg-yellow-50 dark:bg-yellow-950/40'
-                    : 'border-black bg-zinc-50 dark:border-white dark:bg-zinc-800'
+                    ? 'border-amber-400 bg-amber-500/10 ring-2 ring-amber-400/40'
+                    : 'border-zinc-800 bg-zinc-950/60 hover:border-zinc-700'
                 }`}
               >
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
                   <div>
-                    <div className="text-xs font-black uppercase text-zinc-500 dark:text-zinc-400">
-                      Jornada {proposal.fixtureRound || 1} • Época {proposal.season || 1}
+                    <div className="text-[11px] font-mono text-zinc-400">
+                      Jornada {proposal.fixtureRound || 1} · Época {proposal.season || 1}
                     </div>
-                    <div className="text-base font-black uppercase">
+                    <div className="text-base font-bold text-white mt-0.5">
                       {proposal.opponentClubName || 'Treinador Concorrente'}
                     </div>
-                    <div className="text-xs font-bold text-blue-600 dark:text-blue-400 mt-1">
-                      📅 Data Proposta: {scheduledDate.toLocaleDateString('pt-PT')} às {scheduledDate.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })}
+                    <div className="text-xs text-blue-400 font-mono mt-1">
+                      📅 {scheduledDate.toLocaleDateString('pt-PT')} às {scheduledDate.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })}
                     </div>
                   </div>
 
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleResponse(proposal.proposalId, true)}
-                      className="border-2 border-black bg-green-500 px-3 py-1.5 font-black uppercase text-xs text-white hover:bg-green-600 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                      className="rounded-xl bg-emerald-600 px-3.5 py-1.5 font-bold text-xs text-white hover:bg-emerald-500 transition-colors"
                     >
                       Aceitar
                     </button>
                     <button
                       onClick={() => handleResponse(proposal.proposalId, false)}
-                      className="border-2 border-black bg-red-500 px-3 py-1.5 font-black uppercase text-xs text-white hover:bg-red-600 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                      className="rounded-xl border border-rose-500/40 bg-rose-950/40 px-3.5 py-1.5 font-bold text-xs text-rose-300 hover:bg-rose-900/60 transition-colors"
                     >
                       Recusar
                     </button>
                     <button
                       onClick={() => setSelectedProposal(isSelected ? null : proposal)}
-                      className="border-2 border-black bg-yellow-400 px-3 py-1.5 font-black uppercase text-xs text-black hover:bg-yellow-300 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                      className="rounded-xl bg-amber-500 px-3.5 py-1.5 font-bold text-xs text-zinc-950 hover:bg-amber-400 transition-colors"
                     >
                       Reagendar
                     </button>
@@ -147,8 +148,8 @@ export const MatchScheduleModal: React.FC<MatchScheduleModalProps> = ({ isOpen, 
                 </div>
 
                 {isSelected && (
-                  <div className="mt-4 border-t-2 border-black pt-4 dark:border-white">
-                    <label className="block text-xs font-black uppercase mb-1">
+                  <div className="mt-4 border-t border-zinc-800 pt-3">
+                    <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
                       Propor Nova Data/Hora de Partida:
                     </label>
                     <div className="flex gap-2">
@@ -156,7 +157,7 @@ export const MatchScheduleModal: React.FC<MatchScheduleModalProps> = ({ isOpen, 
                         type="datetime-local"
                         value={counterTime}
                         onChange={(e) => setCounterTime(e.target.value)}
-                        className="flex-1 border-2 border-black p-2 font-mono font-bold text-xs dark:border-white dark:bg-zinc-900 dark:text-white"
+                        className="flex-1 rounded-xl border border-zinc-700 bg-zinc-950 p-2 text-xs font-mono text-white focus:border-amber-500 focus:outline-none"
                       />
                       <button
                         onClick={() => {
@@ -164,7 +165,7 @@ export const MatchScheduleModal: React.FC<MatchScheduleModalProps> = ({ isOpen, 
                           const ts = new Date(counterTime).getTime();
                           handleResponse(proposal.proposalId, false, ts);
                         }}
-                        className="border-2 border-black bg-blue-600 px-4 py-2 font-black uppercase text-xs text-white hover:bg-blue-700 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                        className="rounded-xl bg-blue-600 px-4 py-2 font-bold text-xs text-white hover:bg-blue-500 transition-colors"
                       >
                         Enviar
                       </button>

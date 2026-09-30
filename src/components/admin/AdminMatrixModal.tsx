@@ -31,16 +31,16 @@ export const AdminMatrixModal: React.FC<AdminMatrixModalProps> = ({ isOpen, onCl
 
   if (!currentUser?.isAdmin) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-        <div className="max-w-md border-4 border-red-600 bg-white p-6 font-mono font-black shadow-[8px_8px_0px_0px_rgba(220,38,38,1)] text-center">
-          <div className="text-3xl mb-2">⛔</div>
-          <h2 className="text-xl uppercase text-red-600">Acesso Restrito</h2>
-          <p className="mt-2 text-xs font-bold text-zinc-600">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md">
+        <div className="max-w-md rounded-3xl border border-red-500/40 bg-zinc-900 p-6 text-center space-y-3 shadow-2xl">
+          <div className="text-3xl">⛔</div>
+          <h2 className="text-xl font-bold uppercase text-red-500 tracking-tight">Acesso Restrito</h2>
+          <p className="text-xs text-zinc-400">
             Apenas o administrador do sistema (rochap.filipe@gmail.com) tem permissão para aceder à Matriz Central de Regras.
           </p>
           <button
             onClick={onClose}
-            className="mt-4 border-2 border-black bg-black px-4 py-2 text-xs font-black uppercase text-white hover:bg-zinc-800"
+            className="w-full rounded-xl bg-zinc-800 py-2.5 text-xs font-semibold text-white hover:bg-zinc-700 transition-colors"
           >
             Fechar
           </button>
@@ -87,26 +87,28 @@ export const AdminMatrixModal: React.FC<AdminMatrixModalProps> = ({ isOpen, onCl
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-      <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto border-4 border-black bg-zinc-900 p-6 text-white shadow-[10px_10px_0px_0px_rgba(255,255,255,1)]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md">
+      <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl border border-zinc-800 bg-zinc-900 p-6 text-white shadow-2xl space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between border-b-4 border-yellow-400 pb-4">
+        <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
           <div>
-            <span className="bg-yellow-400 text-black px-2 py-0.5 text-xs font-black font-mono uppercase">
-              👑 PAINEL MESTRE DE ADMIN
-            </span>
-            <h2 className="mt-1 text-2xl font-black uppercase tracking-wider text-white">
-              Matriz Central de Regras & Eventos Dinâmicos
+            <div className="flex items-center gap-2">
+              <span className="rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2.5 py-0.5 text-xs font-bold font-mono">
+                👑 Painel Mestre Admin
+              </span>
+            </div>
+            <h2 className="mt-1 text-xl font-bold tracking-tight text-white">
+              Matriz Central de Regras & Variáveis de Simulação
             </h2>
-            <p className="font-mono text-xs text-yellow-400">
-              Sessão iniciada como: {currentUser.email}
+            <p className="text-xs text-zinc-400 font-mono mt-0.5">
+              Administrador: {currentUser.email}
             </p>
           </div>
           <button
             onClick={onClose}
-            className="border-2 border-white bg-red-600 px-3 py-1 font-mono text-sm font-black text-white hover:bg-red-500"
+            className="rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-xs font-semibold text-zinc-300 hover:text-white hover:bg-zinc-700"
           >
-            X
+            ✕
           </button>
         </div>
 

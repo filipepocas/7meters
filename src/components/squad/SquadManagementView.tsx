@@ -1,12 +1,7 @@
 /**
- * 7meters - Squad & Player Molecular Management View (Estilo Elifoot)
- * Ecrã de gestão integral do plantel:
- * - Ficha molecular de cada atleta (escala 1 a 100)
- * - Posições primárias e secundárias
- * - Atributos de guarda-redes e jogadores de campo
- * - Energia física e 5 níveis de moral (Em baixo, Normal, Motivado, Excelente, Estrelado)
- * - Gestão de contratos, vencimento semanal e renovações com prémio de assinatura
- * - Colocação na lista de transferências
+ * 7meters - Squad & Player Molecular Management View (Modern Redesign)
+ * Gestão moderna e intuitiva do plantel com atributos moleculares (1 a 100),
+ * posições, energia, moral, contratos e renovações.
  */
 
 import React, { useState } from 'react';
@@ -19,6 +14,7 @@ export const SquadManagementView: React.FC = () => {
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
   const [renewalPlayer, setRenewalPlayer] = useState<Player | null>(null);
   const [filterPos, setFilterPos] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [notification, setNotification] = useState<string | null>(null);
 
   if (!userClub) return null;
@@ -29,6 +25,9 @@ export const SquadManagementView: React.FC = () => {
 
   // Filtragem
   const filteredSquad = userSquad.filter((p) => {
+    const matchesSearch = !searchQuery || p.name.toLowerCase().includes(searchQuery.toLowerCase());
+    if (!matchesSearch) return false;
+
     if (filterPos === 'all') return true;
     if (filterPos === 'GR') return p.position === 'Guarda-Redes' || p.position === 'GR';
     if (filterPos === 'pontas') return p.position.includes('Ponta') || p.position === 'PE' || p.position === 'PD';
@@ -47,8 +46,8 @@ export const SquadManagementView: React.FC = () => {
     setUserSquad(updatedSquad);
     setNotification(
       updatedStatus
-        ? `${player.name} foi colocado na lista de transferências por €${(player.askingPrice || player.marketValue).toLocaleString()}!`
-        : `${player.name} foi retirado da lista de transferências.`
+        ? `${player.name} foi colocado no mercado por €${(player.askingPrice || player.marketValue).toLocaleString()}!`
+        : `${player.name} foi retirado do mercado.`
     );
     setTimeout(() => setNotification(null), 4000);
   };
@@ -95,390 +94,401 @@ export const SquadManagementView: React.FC = () => {
   const getMoralBadge = (level?: MoralLevel) => {
     switch (level) {
       case 'Estrelado':
-        return <span className="bg-amber-400 text-black px-2 py-0.5 font-black text-[10px] border border-black">⭐ ESTRELADO</span>;
+        return <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-400 border border-amber-500/20">⭐ Estrelado</span>;
       case 'Excelente':
-        return <span className="bg-green-500 text-white px-2 py-0.5 font-black text-[10px]">🔥 EXCELENTE</span>;
+        return <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-400 border border-emerald-500/20">🔥 Excelente</span>;
       case 'Motivado':
-        return <span className="bg-blue-600 text-white px-2 py-0.5 font-black text-[10px]">💪 MOTIVADO</span>;
+        return <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 px-2 py-0.5 text-[10px] font-semibold text-blue-400 border border-blue-500/20">💪 Motivado</span>;
       case 'Normal':
-        return <span className="bg-zinc-200 text-zinc-800 px-2 py-0.5 font-bold text-[10px]">😐 NORMAL</span>;
+        return <span className="inline-flex items-center gap-1 rounded-full bg-zinc-800 px-2 py-0.5 text-[10px] font-medium text-zinc-300">Normal</span>;
       case 'Em baixo':
-        return <span className="bg-red-600 text-white px-2 py-0.5 font-black text-[10px] animate-pulse">⚠️ EM BAIXO</span>;
+        return <span className="inline-flex items-center gap-1 rounded-full bg-red-500/10 px-2 py-0.5 text-[10px] font-semibold text-red-400 border border-red-500/20 animate-pulse">⚠️ Em baixo</span>;
       default:
-        return <span className="bg-zinc-200 text-zinc-800 px-2 py-0.5 font-bold text-[10px]">MOTIVADO</span>;
+        return <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 px-2 py-0.5 text-[10px] font-semibold text-blue-400">Motivado</span>;
     }
   };
 
+  const getPosBadgeColor = (pos: string) => {
+    if (pos.includes('Guarda') || pos === 'GR') return 'bg-blue-500/20 text-blue-300 border-blue-500/30';
+    if (pos.includes('Lateral') || pos === 'LE' || pos === 'LD') return 'bg-rose-500/20 text-rose-300 border-rose-500/30';
+    if (pos.includes('Central') || pos === 'C') return 'bg-amber-500/20 text-amber-300 border-amber-500/30';
+    if (pos.includes('Pivô') || pos === 'P' || pos === 'PV') return 'bg-purple-500/20 text-purple-300 border-purple-500/30';
+    return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'; // Pontas
+  };
+
   return (
-    <div className="w-full space-y-6 font-mono">
-      {/* Cabeçalho */}
-      <div className="border-4 border-black bg-white p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] dark:border-white dark:bg-zinc-900 dark:text-white">
-        <div className="flex flex-wrap items-center justify-between gap-4">
+    <div className="space-y-6">
+      {/* Cabeçalho do Plantel com Métricas */}
+      <div className="rounded-3xl border border-zinc-800 bg-zinc-900/70 p-6 backdrop-blur">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h2 className="text-3xl font-black uppercase tracking-wider">
-              🤾 Plantel & Atributos Moleculares (Elifoot)
+            <h2 className="text-xl md:text-2xl font-bold tracking-tight text-white">
+              👥 Gestão do Plantel & Atributos Moleculares
             </h2>
-            <p className="mt-1 text-sm font-bold text-zinc-600 dark:text-zinc-300">
-              Gere o equilíbrio entre qualidade técnica (1-100), folha salarial semanal, contratos e moral do balneário.
+            <p className="mt-1 text-xs text-zinc-400">
+              Analisa o rendimento técnico (escala 1 a 100), condição física, moral e contratos de cada atleta.
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-4 text-xs font-black">
-            <div className="border-2 border-black bg-yellow-400 p-2 text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-              ATLETAS: {userSquad.length}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 font-mono text-xs">
+            <div className="rounded-xl border border-zinc-800 bg-zinc-950/60 p-2.5 text-center">
+              <span className="text-[10px] text-zinc-500 uppercase block">Atletas</span>
+              <span className="text-sm font-bold text-white">{userSquad.length}</span>
             </div>
-            <div className="border-2 border-black bg-green-400 p-2 text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-              MÉDIA OVR: {avgOvr}
+            <div className="rounded-xl border border-zinc-800 bg-zinc-950/60 p-2.5 text-center">
+              <span className="text-[10px] text-zinc-500 uppercase block">Média OVR</span>
+              <span className="text-sm font-bold text-amber-400">{avgOvr}</span>
             </div>
-            <div className="border-2 border-black bg-blue-400 p-2 text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-              MÉDIA IDADE: {avgAge} anos
+            <div className="rounded-xl border border-zinc-800 bg-zinc-950/60 p-2.5 text-center">
+              <span className="text-[10px] text-zinc-500 uppercase block">Média Idade</span>
+              <span className="text-sm font-bold text-zinc-300">{avgAge} anos</span>
             </div>
-            <div className="border-2 border-black bg-zinc-900 p-2 text-white shadow-[2px_2px_0px_0px_rgba(255,255,255,1)]">
-              FOLHA: €{totalWeeklyWages.toLocaleString()}/sem
+            <div className="rounded-xl border border-zinc-800 bg-zinc-950/60 p-2.5 text-center">
+              <span className="text-[10px] text-zinc-500 uppercase block">Folha Semanal</span>
+              <span className="text-sm font-bold text-emerald-400">€{totalWeeklyWages.toLocaleString()}</span>
             </div>
           </div>
         </div>
       </div>
 
       {notification && (
-        <div className="border-4 border-black bg-yellow-300 p-4 font-black text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+        <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs font-semibold text-amber-300">
           ⚡ {notification}
         </div>
       )}
 
-      {/* Filtros de Posição */}
-      <div className="flex flex-wrap gap-2">
-        {[
-          { id: 'all', label: 'Todos' },
-          { id: 'GR', label: '🧤 Guarda-Redes' },
-          { id: 'laterais', label: '🚀 Laterais (LE/LD)' },
-          { id: 'centrais', label: '🧠 Centrais (C)' },
-          { id: 'pontas', label: '⚡ Pontas (PE/PD)' },
-          { id: 'pivos', label: '🛡️ Pivôs (P)' },
-        ].map((f) => (
-          <button
-            key={f.id}
-            onClick={() => setFilterPos(f.id)}
-            className={`px-4 py-2 text-xs font-black uppercase border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] ${
-              filterPos === f.id ? 'bg-black text-white dark:bg-white dark:text-black' : 'bg-white hover:bg-zinc-100 dark:bg-zinc-800'
-            }`}
-          >
-            {f.label}
-          </button>
-        ))}
+      {/* Controlos de Filtragem e Pesquisa */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        {/* Chips de Posição */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+          {[
+            { id: 'all', label: 'Todos' },
+            { id: 'GR', label: '🧤 Guarda-Redes' },
+            { id: 'laterais', label: '🚀 Laterais (LE/LD)' },
+            { id: 'centrais', label: '🧠 Centrais (C)' },
+            { id: 'pontas', label: '⚡ Pontas (PE/PD)' },
+            { id: 'pivos', label: '🛡️ Pivôs (P)' },
+          ].map((f) => (
+            <button
+              key={f.id}
+              onClick={() => setFilterPos(f.id)}
+              className={`rounded-xl px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-all ${
+                filterPos === f.id
+                  ? 'bg-amber-500 text-zinc-950 font-bold shadow-md shadow-amber-500/20'
+                  : 'border border-zinc-800 bg-zinc-900/60 text-zinc-300 hover:bg-zinc-800'
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Input de Pesquisa Rápida */}
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Pesquisar por nome..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full sm:w-60 rounded-xl border border-zinc-800 bg-zinc-900/80 px-3.5 py-1.5 text-xs text-white placeholder-zinc-500 focus:border-amber-500 focus:outline-none"
+          />
+        </div>
       </div>
 
-      {/* Lista de Atletas em Tabela Brutalista */}
-      <div className="border-4 border-black bg-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:border-white dark:bg-zinc-900 dark:text-white overflow-x-auto">
-        <table className="w-full text-left border-collapse text-xs">
-          <thead>
-            <tr className="border-b-4 border-black bg-zinc-100 dark:border-white dark:bg-zinc-800 uppercase font-black">
-              <th className="p-3">Posição</th>
-              <th className="p-3">Nome / Idade</th>
-              <th className="p-3">OVR</th>
-              <th className="p-3">Energia</th>
-              <th className="p-3">Moral</th>
-              <th className="p-3">Salário / Contrato</th>
-              <th className="p-3">Valor Mercado</th>
-              <th className="p-3 text-right">Ações</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y-2 divide-zinc-200 dark:divide-zinc-800">
-            {filteredSquad.map((player) => {
-              const isGK = player.position === 'Guarda-Redes' || player.position === 'GR';
-              const isTired = player.energyLevel < 50;
-              const isExpiring = player.contractYearsRemaining <= 1;
+      {/* Tabela Moderna de Atletas */}
+      <div className="overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900/60 backdrop-blur">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr className="border-b border-zinc-800 bg-zinc-950/40 text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">
+                <th className="py-3 px-4">Posição</th>
+                <th className="py-3 px-4">Atleta</th>
+                <th className="py-3 px-4 text-center">OVR</th>
+                <th className="py-3 px-4">Energia</th>
+                <th className="py-3 px-4">Moral</th>
+                <th className="py-3 px-4">Contrato</th>
+                <th className="py-3 px-4">Valor de Mercado</th>
+                <th className="py-3 px-4 text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-zinc-800/60">
+              {filteredSquad.map((player) => {
+                const isTired = player.energyLevel < 50;
+                const isExpiring = player.contractYearsRemaining <= 1;
 
-              return (
-                <tr key={player.id} className="hover:bg-yellow-50 dark:hover:bg-zinc-800/50">
-                  <td className="p-3">
-                    <span className="bg-black text-white px-2 py-0.5 text-xs font-black dark:bg-white dark:text-black">
-                      {player.position}
-                    </span>
-                    {player.secondaryPosition && player.secondaryPosition !== 'Nenhuma' && (
-                      <span className="block text-[10px] text-zinc-500 font-bold mt-1">
-                        Sec: {player.secondaryPosition}
+                return (
+                  <tr key={player.id} className="hover:bg-zinc-800/30 transition-colors">
+                    {/* Posição */}
+                    <td className="py-3.5 px-4 whitespace-nowrap">
+                      <span className={`rounded-lg px-2 py-0.5 text-[10px] font-bold border ${getPosBadgeColor(player.position)}`}>
+                        {player.position}
                       </span>
-                    )}
-                  </td>
-
-                  <td className="p-3">
-                    <div className="font-black text-sm">{player.name}</div>
-                    <div className="text-[10px] text-zinc-500">
-                      {player.age} anos • {player.country}
-                    </div>
-                  </td>
-
-                  <td className="p-3 font-black text-sm text-blue-600 dark:text-blue-400">
-                    {player.overallRating}
-                  </td>
-
-                  <td className="p-3 font-bold">
-                    <span className={isTired ? 'text-red-600 font-black animate-pulse' : 'text-green-600'}>
-                      ⚡ {player.energyLevel}%
-                    </span>
-                  </td>
-
-                  <td className="p-3">
-                    {getMoralBadge(player.moralLevel)}
-                  </td>
-
-                  <td className="p-3">
-                    <div className="font-bold">€{(player.wage || 300).toLocaleString()}/sem</div>
-                    <div className="text-[10px]">
-                      {player.contractYearsRemaining} ano(s){' '}
-                      {isExpiring && (
-                        <span className="text-red-600 font-black uppercase">(Último ano!)</span>
+                      {player.secondaryPosition && player.secondaryPosition !== 'Nenhuma' && (
+                        <span className="block text-[10px] text-zinc-500 mt-1">
+                          Sec: {player.secondaryPosition}
+                        </span>
                       )}
-                    </div>
-                  </td>
+                    </td>
 
-                  <td className="p-3 font-bold">
-                    €{player.marketValue.toLocaleString()}
-                  </td>
+                    {/* Nome e Idade */}
+                    <td className="py-3.5 px-4">
+                      <div className="font-semibold text-sm text-white">{player.name}</div>
+                      <div className="text-[11px] text-zinc-400">
+                        {player.age} anos · {player.country}
+                      </div>
+                    </td>
 
-                  <td className="p-3 text-right space-x-1.5 whitespace-nowrap">
-                    <button
-                      onClick={() => setSelectedPlayer(player)}
-                      className="border-2 border-black bg-yellow-400 px-2.5 py-1 text-[11px] font-black uppercase hover:bg-yellow-300 shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] text-black"
-                    >
-                      🔬 Ficha
-                    </button>
+                    {/* OVR */}
+                    <td className="py-3.5 px-4 text-center font-mono font-bold text-sm text-blue-400 tabular-nums">
+                      {player.overallRating}
+                    </td>
 
-                    <button
-                      onClick={() => setRenewalPlayer(player)}
-                      className="border-2 border-black bg-green-500 px-2.5 py-1 text-[11px] font-black uppercase text-white hover:bg-green-600 shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]"
-                    >
-                      📝 Renovar
-                    </button>
+                    {/* Energia */}
+                    <td className="py-3.5 px-4 min-w-[120px]">
+                      <div className="flex items-center justify-between text-[11px] font-mono mb-1">
+                        <span className={isTired ? 'text-red-400 font-bold animate-pulse' : 'text-emerald-400'}>
+                          ⚡ {player.energyLevel}%
+                        </span>
+                      </div>
+                      <div className="h-1.5 w-full rounded-full bg-zinc-800 overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all ${
+                            isTired ? 'bg-red-500' : player.energyLevel > 75 ? 'bg-emerald-500' : 'bg-amber-500'
+                          }`}
+                          style={{ width: `${player.energyLevel}%` }}
+                        />
+                      </div>
+                    </td>
 
-                    <button
-                      onClick={() => handleToggleTransferList(player)}
-                      className={`border-2 border-black px-2 py-1 text-[11px] font-black uppercase shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] ${
-                        player.transferListed
-                          ? 'bg-red-500 text-white hover:bg-red-600'
-                          : 'bg-zinc-200 text-black hover:bg-zinc-300 dark:bg-zinc-700 dark:text-white'
-                      }`}
-                    >
-                      {player.transferListed ? 'Venda (ON)' : 'Vender'}
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                    {/* Moral */}
+                    <td className="py-3.5 px-4 whitespace-nowrap">
+                      {getMoralBadge(player.moralLevel)}
+                    </td>
+
+                    {/* Contrato */}
+                    <td className="py-3.5 px-4 whitespace-nowrap font-mono">
+                      <div className="text-zinc-200">€{(player.wage || 300).toLocaleString()}/sem</div>
+                      <div className="text-[10px] text-zinc-400">
+                        {player.contractYearsRemaining} ano(s){' '}
+                        {isExpiring && (
+                          <span className="text-red-400 font-bold">(Último ano!)</span>
+                        )}
+                      </div>
+                    </td>
+
+                    {/* Valor de Mercado */}
+                    <td className="py-3.5 px-4 font-mono font-semibold text-zinc-300">
+                      €{player.marketValue.toLocaleString()}
+                    </td>
+
+                    {/* Ações */}
+                    <td className="py-3.5 px-4 text-right space-x-1.5 whitespace-nowrap">
+                      <button
+                        onClick={() => setSelectedPlayer(player)}
+                        className="rounded-lg border border-zinc-700 bg-zinc-800 px-2.5 py-1 text-[11px] font-medium text-zinc-200 hover:bg-zinc-700 hover:text-white transition-colors"
+                      >
+                        🔬 Ficha
+                      </button>
+
+                      <button
+                        onClick={() => setRenewalPlayer(player)}
+                        className="rounded-lg bg-emerald-600/20 border border-emerald-500/30 px-2.5 py-1 text-[11px] font-medium text-emerald-400 hover:bg-emerald-600/30 transition-colors"
+                      >
+                        📝 Renovar
+                      </button>
+
+                      <button
+                        onClick={() => handleToggleTransferList(player)}
+                        className={`rounded-lg px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                          player.transferListed
+                            ? 'bg-rose-500/20 border border-rose-500/30 text-rose-400 hover:bg-rose-500/30'
+                            : 'border border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
+                        }`}
+                      >
+                        {player.transferListed ? 'No Mercado' : 'Vender'}
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      {/* MODAL: FICHA MOLECULAR DETALHADA DO ATLETA (ESCALA 1 A 100) */}
+      {/* MODAL MODERNO: FICHA MOLECULAR DO ATLETA (ESCALA 1 A 100) */}
       {selectedPlayer && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 font-mono">
-          <div className="w-full max-w-2xl border-4 border-black bg-white p-6 text-black shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] max-h-[90vh] overflow-y-auto space-y-4">
-            <div className="flex justify-between items-start border-b-4 border-black pb-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md">
+          <div className="w-full max-w-2xl rounded-3xl border border-zinc-800 bg-zinc-900 p-6 text-white shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto">
+            {/* Cabeçalho do Jogador */}
+            <div className="flex items-start justify-between border-b border-zinc-800 pb-4">
               <div>
-                <span className="bg-black text-white px-2 py-0.5 text-xs font-black">
-                  {selectedPlayer.position}
-                </span>
-                {selectedPlayer.secondaryPosition && selectedPlayer.secondaryPosition !== 'Nenhuma' && (
-                  <span className="bg-zinc-200 text-black px-2 py-0.5 text-xs font-bold ml-2">
-                    Secundária: {selectedPlayer.secondaryPosition}
+                <div className="flex items-center gap-2">
+                  <span className={`rounded-lg px-2.5 py-0.5 text-xs font-bold border ${getPosBadgeColor(selectedPlayer.position)}`}>
+                    {selectedPlayer.position}
                   </span>
-                )}
-                <h3 className="text-2xl font-black uppercase mt-1">
+                  {selectedPlayer.secondaryPosition && selectedPlayer.secondaryPosition !== 'Nenhuma' && (
+                    <span className="rounded-lg bg-zinc-800 px-2 py-0.5 text-xs text-zinc-400">
+                      Secundária: {selectedPlayer.secondaryPosition}
+                    </span>
+                  )}
+                </div>
+                <h3 className="text-2xl font-black tracking-tight text-white mt-2">
                   {selectedPlayer.name}
                 </h3>
-                <span className="text-xs text-zinc-600">
-                  {selectedPlayer.age} anos • {selectedPlayer.country} • Overall {selectedPlayer.overallRating}
-                </span>
+                <div className="text-xs text-zinc-400 font-mono mt-0.5">
+                  {selectedPlayer.age} anos · {selectedPlayer.country} · Salário: €{(selectedPlayer.wage || 300).toLocaleString()}/sem
+                </div>
               </div>
-              <button
-                onClick={() => setSelectedPlayer(null)}
-                className="border-2 border-black bg-red-500 px-3 py-1 font-black text-white hover:bg-red-600"
-              >
-                ✕
-              </button>
+
+              <div className="flex items-center gap-3">
+                <div className="rounded-2xl border border-blue-500/30 bg-blue-500/10 px-4 py-2 text-center">
+                  <span className="text-[10px] text-blue-400 uppercase font-bold block">Overall</span>
+                  <span className="text-2xl font-black text-blue-400 font-mono tabular-nums">
+                    {selectedPlayer.overallRating}
+                  </span>
+                </div>
+                <button
+                  onClick={() => setSelectedPlayer(null)}
+                  className="rounded-xl bg-zinc-800 p-2 text-zinc-400 hover:text-white hover:bg-zinc-700"
+                >
+                  ✕
+                </button>
+              </div>
             </div>
 
-            {/* Atributos Moleculares 1 a 100 */}
-            <div className="space-y-3">
-              <h4 className="font-black text-sm uppercase text-zinc-800 border-b-2 border-black pb-1">
-                📊 Atributos Técnicos Especializados (Escala 1 a 100)
+            {/* Atributos Moleculares 1 a 100 com Barras Elegantes */}
+            <div className="space-y-4">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-400">
+                Atributos Especializados de Andebol (Escala 1 a 100)
               </h4>
 
               {selectedPlayer.position === 'Guarda-Redes' || selectedPlayer.position === 'GR' ? (
                 /* Atributos de Guarda-Redes */
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                  <div>
-                    <div className="flex justify-between font-bold mb-1">
-                      <span>Reflexos à Queima-Roupa:</span>
-                      <span className="font-black">{selectedPlayer.molecular?.gkReflexes || 75}/100</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {[
+                    { label: 'Reflexos à Queima-Roupa', val: selectedPlayer.molecular?.gkReflexes || 75, color: 'bg-blue-500' },
+                    { label: 'Colocação Remates Exteriores', val: selectedPlayer.molecular?.gkPositioning || 72, color: 'bg-indigo-500' },
+                    { label: 'Defesa de 7 Metros', val: selectedPlayer.molecular?.gkSevenMeterSave || 70, color: 'bg-amber-500' },
+                    { label: 'Reposição para Contra-Ataque', val: selectedPlayer.molecular?.gkFastBreakRelease || 74, color: 'bg-emerald-500' },
+                  ].map((attr) => (
+                    <div key={attr.label} className="rounded-xl border border-zinc-800 bg-zinc-950/40 p-3">
+                      <div className="flex justify-between text-xs font-medium mb-1.5">
+                        <span className="text-zinc-300">{attr.label}</span>
+                        <span className="font-mono font-bold text-white tabular-nums">{attr.val}/100</span>
+                      </div>
+                      <div className="h-2 w-full rounded-full bg-zinc-800 overflow-hidden">
+                        <div className={`h-full rounded-full ${attr.color}`} style={{ width: `${attr.val}%` }} />
+                      </div>
                     </div>
-                    <div className="h-2.5 bg-zinc-200 border border-black">
-                      <div className="h-full bg-blue-600" style={{ width: `${selectedPlayer.molecular?.gkReflexes || 75}%` }} />
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between font-bold mb-1">
-                      <span>Colocação Remates Exteriores:</span>
-                      <span className="font-black">{selectedPlayer.molecular?.gkPositioning || 72}/100</span>
-                    </div>
-                    <div className="h-2.5 bg-zinc-200 border border-black">
-                      <div className="h-full bg-blue-600" style={{ width: `${selectedPlayer.molecular?.gkPositioning || 72}%` }} />
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between font-bold mb-1">
-                      <span>Defesa de 7 Metros:</span>
-                      <span className="font-black">{selectedPlayer.molecular?.gkSevenMeterSave || 70}/100</span>
-                    </div>
-                    <div className="h-2.5 bg-zinc-200 border border-black">
-                      <div className="h-full bg-blue-600" style={{ width: `${selectedPlayer.molecular?.gkSevenMeterSave || 70}%` }} />
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between font-bold mb-1">
-                      <span>Reposição Contra-Ataque:</span>
-                      <span className="font-black">{selectedPlayer.molecular?.gkFastBreakRelease || 74}/100</span>
-                    </div>
-                    <div className="h-2.5 bg-zinc-200 border border-black">
-                      <div className="h-full bg-blue-600" style={{ width: `${selectedPlayer.molecular?.gkFastBreakRelease || 74}%` }} />
-                    </div>
-                  </div>
+                  ))}
                 </div>
               ) : (
                 /* Atributos de Jogadores de Campo */
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                  <div>
-                    <div className="flex justify-between font-bold mb-1">
-                      <span>Remate Exterior (9 Metros):</span>
-                      <span className="font-black">{selectedPlayer.molecular?.shotExterior || 70}/100</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {[
+                    { label: 'Remate Exterior (9 Metros)', val: selectedPlayer.molecular?.shotExterior || 70, color: 'bg-rose-500' },
+                    { label: 'Penetração / Drible 1v1', val: selectedPlayer.molecular?.penetration1v1 || 72, color: 'bg-amber-500' },
+                    { label: 'Visão de Jogo / Passe', val: selectedPlayer.molecular?.visionDistribution || 75, color: 'bg-blue-500' },
+                    { label: 'Eficácia em 7 Metros', val: selectedPlayer.molecular?.sevenMeterShot || 68, color: 'bg-emerald-500' },
+                    { label: 'Desarme & Bloqueio (6 Metros)', val: selectedPlayer.molecular?.defensiveBlock || 73, color: 'bg-purple-500' },
+                    { label: 'Resistência & Estamina', val: selectedPlayer.molecular?.stamina || 75, color: 'bg-cyan-500' },
+                  ].map((attr) => (
+                    <div key={attr.label} className="rounded-xl border border-zinc-800 bg-zinc-950/40 p-3">
+                      <div className="flex justify-between text-xs font-medium mb-1.5">
+                        <span className="text-zinc-300">{attr.label}</span>
+                        <span className="font-mono font-bold text-white tabular-nums">{attr.val}/100</span>
+                      </div>
+                      <div className="h-2 w-full rounded-full bg-zinc-800 overflow-hidden">
+                        <div className={`h-full rounded-full ${attr.color}`} style={{ width: `${attr.val}%` }} />
+                      </div>
                     </div>
-                    <div className="h-2.5 bg-zinc-200 border border-black">
-                      <div className="h-full bg-red-600" style={{ width: `${selectedPlayer.molecular?.shotExterior || 70}%` }} />
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between font-bold mb-1">
-                      <span>Penetração / Drible 1v1:</span>
-                      <span className="font-black">{selectedPlayer.molecular?.penetration1v1 || 72}/100</span>
-                    </div>
-                    <div className="h-2.5 bg-zinc-200 border border-black">
-                      <div className="h-full bg-amber-500" style={{ width: `${selectedPlayer.molecular?.penetration1v1 || 72}%` }} />
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between font-bold mb-1">
-                      <span>Visão de Jogo / Passe:</span>
-                      <span className="font-black">{selectedPlayer.molecular?.visionDistribution || 75}/100</span>
-                    </div>
-                    <div className="h-2.5 bg-zinc-200 border border-black">
-                      <div className="h-full bg-blue-600" style={{ width: `${selectedPlayer.molecular?.visionDistribution || 75}%` }} />
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between font-bold mb-1">
-                      <span>Eficácia em 7 Metros:</span>
-                      <span className="font-black">{selectedPlayer.molecular?.sevenMeterShot || 68}/100</span>
-                    </div>
-                    <div className="h-2.5 bg-zinc-200 border border-black">
-                      <div className="h-full bg-green-600" style={{ width: `${selectedPlayer.molecular?.sevenMeterShot || 68}%` }} />
-                    </div>
-                  </div>
-
-                  <div className="sm:col-span-2">
-                    <div className="flex justify-between font-bold mb-1">
-                      <span>Desarme & Bloqueio Defensivo (6 Metros):</span>
-                      <span className="font-black">{selectedPlayer.molecular?.defensiveBlock || 73}/100</span>
-                    </div>
-                    <div className="h-2.5 bg-zinc-200 border border-black">
-                      <div className="h-full bg-purple-600" style={{ width: `${selectedPlayer.molecular?.defensiveBlock || 73}%` }} />
-                    </div>
-                  </div>
+                  ))}
                 </div>
               )}
 
-              {/* Físico e Disciplinar */}
-              <div className="border-t-2 border-black pt-3 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs text-center font-bold">
-                <div className="border border-black p-2 bg-zinc-100">
-                  <div className="text-[10px] uppercase text-zinc-500">Energia Atual</div>
-                  <div className="text-base text-green-600 font-black">{selectedPlayer.energyLevel}%</div>
+              {/* Físico & Disciplinar */}
+              <div className="grid grid-cols-3 gap-3 pt-2">
+                <div className="rounded-xl border border-zinc-800 bg-zinc-950/40 p-3 text-center">
+                  <span className="text-[10px] text-zinc-500 uppercase block">Energia Atual</span>
+                  <span className="text-base font-bold text-emerald-400 font-mono tabular-nums">
+                    ⚡ {selectedPlayer.energyLevel}%
+                  </span>
                 </div>
-                <div className="border border-black p-2 bg-zinc-100">
-                  <div className="text-[10px] uppercase text-zinc-500">Resistência / Estamina</div>
-                  <div className="text-base font-black">{selectedPlayer.molecular?.stamina || 75}/100</div>
+                <div className="rounded-xl border border-zinc-800 bg-zinc-950/40 p-3 text-center">
+                  <span className="text-[10px] text-zinc-500 uppercase block">Moral</span>
+                  <span className="text-xs font-bold text-white block mt-1">
+                    {selectedPlayer.moralLevel || 'Motivado'}
+                  </span>
                 </div>
-                <div className="border border-black p-2 bg-zinc-100">
-                  <div className="text-[10px] uppercase text-zinc-500">Amarelos / 2m</div>
-                  <div className="text-base font-black">
-                    🟨 {selectedPlayer.stats?.yellowCards || 0} | 🛑 {selectedPlayer.stats?.twoMinSuspensions || 0}
-                  </div>
-                </div>
-                <div className="border border-black p-2 bg-zinc-100">
-                  <div className="text-[10px] uppercase text-zinc-500">Golos Época</div>
-                  <div className="text-base font-black text-blue-600">
-                    ⚽ {selectedPlayer.stats?.goalsScored || 0}
-                  </div>
+                <div className="rounded-xl border border-zinc-800 bg-zinc-950/40 p-3 text-center">
+                  <span className="text-[10px] text-zinc-500 uppercase block">Disciplina</span>
+                  <span className="text-xs font-bold text-zinc-300 font-mono block mt-1">
+                    🟨 {selectedPlayer.stats?.yellowCards || 0} · 🛑 {selectedPlayer.stats?.twoMinSuspensions || 0}
+                  </span>
                 </div>
               </div>
             </div>
 
             <button
               onClick={() => setSelectedPlayer(null)}
-              className="w-full border-2 border-black bg-black p-2.5 font-black uppercase text-white hover:bg-zinc-800"
+              className="w-full rounded-xl bg-zinc-800 py-3 text-xs font-semibold text-white hover:bg-zinc-700 transition-colors"
             >
-              Fechar Ficha Molecular
+              Fechar Ficha do Atleta
             </button>
           </div>
         </div>
       )}
 
-      {/* MODAL: RENOVAÇÃO DE CONTRATO */}
+      {/* MODAL MODERNO: RENOVAÇÃO DE CONTRATO */}
       {renewalPlayer && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 font-mono">
-          <div className="w-full max-w-md border-4 border-black bg-yellow-400 p-6 text-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] space-y-4">
-            <h3 className="text-xl font-black uppercase border-b-2 border-black pb-2">
-              📝 Negociação de Contrato: {renewalPlayer.name}
-            </h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md">
+          <div className="w-full max-w-md rounded-3xl border border-zinc-800 bg-zinc-900 p-6 text-white shadow-2xl space-y-5">
+            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+              <h3 className="text-lg font-bold text-white">
+                📝 Renovação: {renewalPlayer.name}
+              </h3>
+              <button
+                onClick={() => setRenewalPlayer(null)}
+                className="rounded-lg p-1.5 text-zinc-400 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
 
-            <p className="text-xs font-bold">
-              O atleta aceita estender a sua ligação ao clube por mais <strong>2 épocas</strong> com as seguintes condições:
+            <p className="text-xs text-zinc-300">
+              O atleta aceita prolongar a sua ligação ao clube por mais <strong>2 épocas desportivas</strong>:
             </p>
 
-            <div className="border-2 border-black bg-white p-3 space-y-2 text-xs">
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-4 space-y-2.5 font-mono text-xs">
               <div className="flex justify-between">
-                <span>Prémio de Assinatura (Imediato):</span>
-                <strong>€{Math.round(renewalPlayer.marketValue * 0.08).toLocaleString()}</strong>
+                <span className="text-zinc-400">Prémio de Assinatura:</span>
+                <strong className="text-amber-400">€{Math.round(renewalPlayer.marketValue * 0.08).toLocaleString()}</strong>
               </div>
               <div className="flex justify-between">
-                <span>Salário Semanal Proposto:</span>
-                <strong>€{Math.round((renewalPlayer.wage || 300) * 1.25).toLocaleString()}/sem</strong>
+                <span className="text-zinc-400">Novo Salário Semanal:</span>
+                <strong className="text-white">€{Math.round((renewalPlayer.wage || 300) * 1.25).toLocaleString()}/sem</strong>
               </div>
               <div className="flex justify-between">
-                <span>Duração Adicional:</span>
-                <strong>+2 Épocas</strong>
+                <span className="text-zinc-400">Duração Contratual:</span>
+                <strong className="text-emerald-400">+2 Épocas</strong>
               </div>
-              <div className="flex justify-between">
-                <span>Orçamento Disponível:</span>
-                <span className="text-green-600 font-bold">€{userClub.budget.toLocaleString()}</span>
+              <div className="flex justify-between border-t border-zinc-800 pt-2">
+                <span className="text-zinc-400">Saldo Disponível:</span>
+                <span className="text-zinc-300">€{userClub.budget.toLocaleString()}</span>
               </div>
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex gap-2.5">
               <button
                 onClick={() => handleRenewContract(renewalPlayer)}
-                className="flex-1 border-2 border-black bg-green-600 p-2.5 font-black uppercase text-white hover:bg-green-700 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                className="flex-1 rounded-xl bg-emerald-600 py-2.5 text-xs font-bold text-white hover:bg-emerald-500 transition-colors shadow-lg shadow-emerald-600/20"
               >
-                Aceitar & Assinar
+                Aceitar & Assinar Contrato
               </button>
               <button
                 onClick={() => setRenewalPlayer(null)}
-                className="border-2 border-black bg-zinc-200 px-4 py-2.5 font-black uppercase text-black hover:bg-zinc-300"
+                className="rounded-xl border border-zinc-700 bg-zinc-800 px-4 py-2.5 text-xs font-medium text-zinc-300 hover:bg-zinc-700"
               >
                 Recusar
               </button>

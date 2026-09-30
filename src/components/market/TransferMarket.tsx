@@ -197,85 +197,100 @@ export const TransferMarket: React.FC = () => {
   };
 
   return (
-    <div className="w-full space-y-6 font-mono">
-      {/* Cabeçalho */}
-      <div className="border-4 border-black bg-white p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] dark:border-white dark:bg-zinc-900 dark:text-white">
-        <div className="flex flex-wrap items-center justify-between gap-4">
+    <div className="w-full space-y-6">
+      {/* Cabeçalho Moderno */}
+      <div className="rounded-3xl border border-zinc-800 bg-zinc-900/70 p-6 backdrop-blur">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
-            <h2 className="text-3xl font-black uppercase tracking-wider">
-              🏪 Mercado de Transferências (Estilo Elifoot)
+            <h2 className="text-xl md:text-2xl font-bold tracking-tight text-white">
+              🏪 Mercado de Transferências & Negociações
             </h2>
-            <p className="mt-1 text-sm font-bold text-zinc-600 dark:text-zinc-300">
-              Contrata jogadores livres sem clube, submete propostas a clubes rivais ou vende atletas do teu plantel.
+            <p className="mt-1 text-xs text-zinc-400">
+              Contrata jogadores livres sem custos de passe, apresenta propostas a clubes rivais ou rentabiliza atletas do teu plantel.
             </p>
           </div>
 
-          <div className="border-2 border-black bg-yellow-400 px-4 py-2 font-black text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] text-sm">
-            💰 Tesouraria Disponível: €{userClub.budget.toLocaleString()}
+          <div className="flex items-center gap-2 rounded-2xl border border-emerald-500/30 bg-emerald-950/40 px-4 py-2 font-mono text-xs font-bold text-emerald-300 backdrop-blur">
+            <span>Tesouraria:</span>
+            <span className="text-sm font-black text-white tabular-nums">€{userClub.budget.toLocaleString()}</span>
           </div>
         </div>
       </div>
 
       {feedbackMessage && (
-        <div className="border-4 border-black bg-yellow-300 p-4 font-black text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+        <div className="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 text-xs font-semibold text-amber-300 backdrop-blur">
           ⚡ {feedbackMessage}
         </div>
       )}
 
-      {/* Navegação entre as 3 Vias do Mercado */}
-      <div className="flex flex-wrap border-b-4 border-black dark:border-white">
+      {/* Navegação por Segmentos Modernos */}
+      <div className="flex space-x-2 border-b border-zinc-800 pb-3">
         {[
-          { id: 'free_agents', label: `🆓 Jogadores Livres (${freeAgents.length})` },
-          { id: 'club_market', label: `🏢 Mercado de Clubes (${clubMarketPlayers.length})` },
-          { id: 'sell', label: `💰 Vender Atletas (${userSquad.filter((p) => p.transferListed).length} Listados)` },
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id as typeof activeTab)}
-            className={`px-5 py-3 font-black uppercase border-t-4 border-l-4 border-r-4 border-black dark:border-white ${
-              activeTab === tab.id
-                ? 'bg-yellow-400 text-black'
-                : 'bg-white text-black hover:bg-zinc-100 dark:bg-zinc-800 dark:text-white'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+          { id: 'free_agents', label: 'Jogadores Livres', count: freeAgents.length, icon: '🆓' },
+          { id: 'club_market', label: 'Mercado de Clubes', count: clubMarketPlayers.length, icon: '🏢' },
+          { id: 'sell', label: 'Vender Atletas', count: userSquad.filter((p) => p.transferListed).length, icon: '💰' },
+        ].map((tab) => {
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as typeof activeTab)}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold transition-all ${
+                isActive
+                  ? 'bg-amber-500 text-zinc-950 font-bold shadow-md shadow-amber-500/20'
+                  : 'bg-zinc-900/60 text-zinc-400 hover:text-white hover:bg-zinc-800/80 border border-zinc-800/80'
+              }`}
+            >
+              <span>{tab.icon}</span>
+              <span>{tab.label}</span>
+              <span className={`rounded-full px-2 py-0.2 text-[10px] font-mono font-bold ${
+                isActive ? 'bg-black/20 text-black' : 'bg-zinc-800 text-zinc-300'
+              }`}>
+                {tab.count}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
-      {/* Filtros de Posição */}
-      <div className="flex flex-wrap gap-2 text-xs">
+      {/* Filtros de Posição com Chips Limpos */}
+      <div className="flex flex-wrap gap-1.5 text-xs">
         {[
           { id: 'TODAS', label: 'Todas as Posições' },
-          { id: 'GR', label: '🧤 Guarda-Redes' },
+          { id: 'GR', label: 'Guarda-Redes' },
           { id: 'LE', label: 'Lateral Esquerdo' },
           { id: 'LD', label: 'Lateral Direito' },
           { id: 'C', label: 'Central' },
           { id: 'PE', label: 'Ponta Esquerdo' },
           { id: 'PD', label: 'Ponta Direito' },
           { id: 'PV', label: 'Pivô' },
-        ].map((pos) => (
-          <button
-            key={pos.id}
-            onClick={() => setSelectedPosition(pos.id as typeof selectedPosition)}
-            className={`px-3 py-1.5 font-bold uppercase border-2 border-black ${
-              selectedPosition === pos.id ? 'bg-black text-white dark:bg-white dark:text-black' : 'bg-white hover:bg-zinc-100 dark:bg-zinc-800'
-            }`}
-          >
-            {pos.label}
-          </button>
-        ))}
+        ].map((pos) => {
+          const isSelected = selectedPosition === pos.id;
+          return (
+            <button
+              key={pos.id}
+              onClick={() => setSelectedPosition(pos.id as typeof selectedPosition)}
+              className={`rounded-lg px-3 py-1.5 font-medium transition-all text-xs ${
+                isSelected
+                  ? 'bg-zinc-100 text-zinc-950 font-semibold shadow-sm'
+                  : 'bg-zinc-900/60 text-zinc-400 hover:text-zinc-200 border border-zinc-800/60'
+              }`}
+            >
+              {pos.label}
+            </button>
+          );
+        })}
       </div>
 
       {/* SEPARADOR 1: JOGADORES LIVRES (SEM CLUBE) */}
       {activeTab === 'free_agents' && (
-        <div className="border-4 border-black bg-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:border-white dark:bg-zinc-900 dark:text-white p-6 space-y-4">
-          <div className="border-l-4 border-green-500 pl-3">
-            <h3 className="text-lg font-black uppercase">
-              Jogadores Livres (Apenas Salário / Custo Zero de Passe)
+        <div className="rounded-3xl border border-zinc-800 bg-zinc-900/60 p-6 backdrop-blur shadow-xl space-y-4">
+          <div className="border-l-2 border-emerald-500 pl-3">
+            <h3 className="text-base font-bold text-white tracking-tight">
+              Jogadores Livres (Custo Zero de Passe)
             </h3>
-            <p className="text-xs text-zinc-500">
-              Atletas sem contrato desportivo. Podes contratá-los a qualquer momento pagando apenas o vencimento semanal acordado. Ideal para colmatar lesões!
+            <p className="text-xs text-zinc-400 mt-0.5">
+              Atletas sem clube desportivo. Podes contratá-los a qualquer momento pagando apenas o vencimento semanal acordado.
             </p>
           </div>
 
@@ -283,37 +298,39 @@ export const TransferMarket: React.FC = () => {
             {filterList(freeAgents).map((player) => (
               <div
                 key={player.id}
-                className="border-2 border-black p-4 bg-zinc-50 dark:bg-zinc-800 space-y-3"
+                className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-5 space-y-4 hover:border-zinc-700 transition-colors flex flex-col justify-between"
               >
-                <div className="flex justify-between items-start">
-                  <div>
-                    <span className="bg-black text-white px-2 py-0.5 text-[10px] font-black dark:bg-white dark:text-black">
-                      {player.position}
-                    </span>
-                    <h4 className="font-black text-base mt-1">{player.name}</h4>
-                    <span className="text-[11px] text-zinc-500">
-                      {player.age} anos • {player.country}
+                <div>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="rounded bg-zinc-800 px-2 py-0.5 text-[10px] font-bold text-zinc-300">
+                        {player.position}
+                      </span>
+                      <h4 className="font-bold text-base text-white mt-1.5">{player.name}</h4>
+                      <span className="text-xs text-zinc-400">
+                        {player.age} anos · {player.country}
+                      </span>
+                    </div>
+                    <span className="rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2.5 py-1 font-mono font-bold text-sm tabular-nums">
+                      OVR {player.overallRating}
                     </span>
                   </div>
-                  <span className="font-black text-blue-600 dark:text-blue-400 text-lg">
-                    OVR {player.overallRating}
-                  </span>
-                </div>
 
-                <div className="text-xs border-t border-zinc-300 pt-2 space-y-1 dark:border-zinc-700">
-                  <div className="flex justify-between">
-                    <span>Exigência Salarial:</span>
-                    <strong>€{(player.wage || 350).toLocaleString()}/sem</strong>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Valor de Mercado:</span>
-                    <span>€{player.marketValue.toLocaleString()}</span>
+                  <div className="mt-4 pt-3 border-t border-zinc-800/80 space-y-1.5 text-xs text-zinc-400 font-mono">
+                    <div className="flex justify-between">
+                      <span>Exigência Salarial:</span>
+                      <strong className="text-white">€{(player.wage || 350).toLocaleString()}/sem</strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Valor de Mercado:</span>
+                      <span className="text-zinc-300">€{player.marketValue.toLocaleString()}</span>
+                    </div>
                   </div>
                 </div>
 
                 <button
                   onClick={() => handleSignFreeAgent(player)}
-                  className="w-full border-2 border-black bg-green-500 p-2 font-black uppercase text-xs text-white hover:bg-green-600 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                  className="mt-2 w-full rounded-xl bg-emerald-600 py-2.5 font-bold text-xs text-white hover:bg-emerald-500 active:scale-[0.98] transition-all shadow-md shadow-emerald-600/20"
                 >
                   ✍️ Contratar a Custo Zero
                 </button>
@@ -323,15 +340,15 @@ export const TransferMarket: React.FC = () => {
         </div>
       )}
 
-      {/* SEPARADOR 2: MERCADO DE CLUBES (TRANSFERÊNCIAS COM PROPOSTAS) */}
+      {/* SEPARADOR 2: MERCADO DE CLUBES */}
       {activeTab === 'club_market' && (
-        <div className="border-4 border-black bg-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:border-white dark:bg-zinc-900 dark:text-white p-6 space-y-4">
-          <div className="border-l-4 border-blue-600 pl-3">
-            <h3 className="text-lg font-black uppercase">
-              Mercado de Clubes (Transferências com Custo de Passe)
+        <div className="rounded-3xl border border-zinc-800 bg-zinc-900/60 p-6 backdrop-blur shadow-xl space-y-4">
+          <div className="border-l-2 border-blue-500 pl-3">
+            <h3 className="text-base font-bold text-white tracking-tight">
+              Mercado de Clubes (Transferências com Propostas)
             </h3>
-            <p className="text-xs text-zinc-500">
-              Insere uma proposta financeira. O clube proprietário avalia instantaneamente (Aceite, Contraproposta ou Recusa). Ou paga a cláusula a pronto!
+            <p className="text-xs text-zinc-400 mt-0.5">
+              Insere uma proposta financeira. O clube proprietário avalia instantaneamente (Aceite, Contraproposta ou Recusa).
             </p>
           </div>
 
@@ -339,55 +356,57 @@ export const TransferMarket: React.FC = () => {
             {filterList(clubMarketPlayers).map((player) => (
               <div
                 key={player.id}
-                className="border-2 border-black p-4 bg-zinc-50 dark:bg-zinc-800 space-y-3"
+                className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-5 space-y-4 hover:border-zinc-700 transition-colors flex flex-col justify-between"
               >
-                <div className="flex justify-between items-start">
-                  <div>
-                    <span className="bg-black text-white px-2 py-0.5 text-[10px] font-black dark:bg-white dark:text-black">
-                      {player.position}
-                    </span>
-                    <h4 className="font-black text-base mt-1">{player.name}</h4>
-                    <span className="text-[11px] text-zinc-500">
-                      {player.age} anos • {player.country}
+                <div>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="rounded bg-zinc-800 px-2 py-0.5 text-[10px] font-bold text-zinc-300">
+                        {player.position}
+                      </span>
+                      <h4 className="font-bold text-base text-white mt-1.5">{player.name}</h4>
+                      <span className="text-xs text-zinc-400">
+                        {player.age} anos · {player.country}
+                      </span>
+                    </div>
+                    <span className="rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2.5 py-1 font-mono font-bold text-sm tabular-nums">
+                      OVR {player.overallRating}
                     </span>
                   </div>
-                  <span className="font-black text-purple-600 dark:text-purple-400 text-lg">
-                    OVR {player.overallRating}
-                  </span>
+
+                  <div className="mt-4 pt-3 border-t border-zinc-800/80 space-y-1.5 text-xs text-zinc-400 font-mono">
+                    <div className="flex justify-between">
+                      <span>Preço Mercado:</span>
+                      <strong className="text-white">€{player.marketValue.toLocaleString()}</strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Cláusula de Rescisão:</span>
+                      <strong className="text-rose-400">
+                        €{(player.releaseClause || Math.round(player.marketValue * 1.5)).toLocaleString()}
+                      </strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Salário Estimado:</span>
+                      <span className="text-zinc-300">€{(player.wage || 400).toLocaleString()}/sem</span>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="text-xs border-t border-zinc-300 pt-2 space-y-1 dark:border-zinc-700">
-                  <div className="flex justify-between">
-                    <span>Preço Mercado:</span>
-                    <strong>€{player.marketValue.toLocaleString()}</strong>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Cláusula de Rescisão:</span>
-                    <strong className="text-red-600">
-                      €{(player.releaseClause || Math.round(player.marketValue * 1.5)).toLocaleString()}
-                    </strong>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Salário Estimado:</span>
-                    <span>€{(player.wage || 400).toLocaleString()}/sem</span>
-                  </div>
-                </div>
-
-                <div className="flex gap-2">
+                <div className="flex gap-2 pt-2">
                   <button
                     onClick={() => {
                       setNegotiatingPlayer(player);
                       setBidInput(player.marketValue.toString());
                       setOfferResult(null);
                     }}
-                    className="flex-1 border-2 border-black bg-yellow-400 p-2 font-black uppercase text-xs text-black hover:bg-yellow-300 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                    className="flex-1 rounded-xl bg-amber-500 py-2.5 font-bold text-xs text-zinc-950 hover:bg-amber-400 active:scale-[0.98] transition-all shadow-md shadow-amber-500/20"
                   >
                     💬 Fazer Proposta
                   </button>
 
                   <button
                     onClick={() => handlePayReleaseClause(player)}
-                    className="border-2 border-black bg-red-600 px-3 p-2 font-black uppercase text-xs text-white hover:bg-red-700 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                    className="rounded-xl border border-rose-500/40 bg-rose-950/40 px-3 py-2.5 font-bold text-xs text-rose-300 hover:bg-rose-900/60 transition-all"
                     title="Pagar Cláusula a Pronto"
                   >
                     💥 Cláusula
@@ -401,12 +420,12 @@ export const TransferMarket: React.FC = () => {
 
       {/* SEPARADOR 3: VENDER ATLETAS DO PLANTEL */}
       {activeTab === 'sell' && (
-        <div className="border-4 border-black bg-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:border-white dark:bg-zinc-900 dark:text-white p-6 space-y-4">
-          <div className="border-l-4 border-amber-500 pl-3">
-            <h3 className="text-lg font-black uppercase">
+        <div className="rounded-3xl border border-zinc-800 bg-zinc-900/60 p-6 backdrop-blur shadow-xl space-y-4">
+          <div className="border-l-2 border-amber-500 pl-3">
+            <h3 className="text-base font-bold text-white tracking-tight">
               Venda de Atletas do {userClub.name}
             </h3>
-            <p className="text-xs text-zinc-500">
+            <p className="text-xs text-zinc-400 mt-0.5">
               Coloca os teus atletas no mercado para receberes verbas imediatas e aliviares a folha salarial semanal.
             </p>
           </div>
@@ -415,33 +434,33 @@ export const TransferMarket: React.FC = () => {
             {userSquad.map((player) => (
               <div
                 key={player.id}
-                className="border-2 border-black p-4 bg-zinc-50 dark:bg-zinc-800 space-y-2"
+                className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-5 space-y-3 hover:border-zinc-700 transition-colors"
               >
                 <div className="flex justify-between items-start">
                   <div>
-                    <span className="bg-black text-white px-2 py-0.5 text-[10px] font-black dark:bg-white dark:text-black">
+                    <span className="rounded bg-zinc-800 px-2 py-0.5 text-[10px] font-bold text-zinc-300">
                       {player.position}
                     </span>
-                    <h4 className="font-black text-sm mt-1">{player.name}</h4>
-                    <span className="text-[10px] text-zinc-500">
-                      {player.age} anos • OVR {player.overallRating}
+                    <h4 className="font-bold text-sm text-white mt-1">{player.name}</h4>
+                    <span className="text-[11px] text-zinc-400">
+                      {player.age} anos · OVR {player.overallRating}
                     </span>
                   </div>
                   {player.transferListed && (
-                    <span className="bg-amber-400 text-black px-2 py-0.5 text-[10px] font-black">
-                      NO MERCADO
+                    <span className="rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 text-[9px] font-bold">
+                      No Mercado
                     </span>
                   )}
                 </div>
 
-                <div className="text-xs space-y-1">
+                <div className="text-xs space-y-1 font-mono pt-2 border-t border-zinc-800 text-zinc-400">
                   <div className="flex justify-between">
                     <span>Valor de Mercado:</span>
-                    <strong>€{player.marketValue.toLocaleString()}</strong>
+                    <strong className="text-white">€{player.marketValue.toLocaleString()}</strong>
                   </div>
                   <div className="flex justify-between">
                     <span>Oferta de Clube Rival:</span>
-                    <strong className="text-green-600">
+                    <strong className="text-emerald-400">
                       €{Math.round(player.marketValue * 0.95).toLocaleString()}
                     </strong>
                   </div>
@@ -449,7 +468,7 @@ export const TransferMarket: React.FC = () => {
 
                 <button
                   onClick={() => handleAcceptSaleOffer(player)}
-                  className="w-full border-2 border-black bg-black text-white p-2 font-black uppercase text-xs hover:bg-zinc-800 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] dark:bg-white dark:text-black"
+                  className="mt-3 w-full rounded-xl bg-zinc-800 py-2 font-bold text-xs text-zinc-200 hover:bg-zinc-700 hover:text-white active:scale-[0.98] transition-all"
                 >
                   🤝 Vender por €{Math.round(player.marketValue * 0.95).toLocaleString()}
                 </button>
@@ -459,49 +478,54 @@ export const TransferMarket: React.FC = () => {
         </div>
       )}
 
-      {/* MODAL DE PROPOSTA DE TRANSFERÊNCIA */}
+      {/* MODAL DE PROPOSTA DE TRANSFERÊNCIA MODERNO */}
       {negotiatingPlayer && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-          <div className="w-full max-w-lg border-4 border-black bg-yellow-400 p-6 text-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] space-y-4">
-            <h3 className="text-xl font-black uppercase border-b-2 border-black pb-2">
-              💼 Proposta por {negotiatingPlayer.name} ({negotiatingPlayer.position})
-            </h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md">
+          <div className="w-full max-w-lg rounded-3xl border border-zinc-800 bg-zinc-900 p-6 text-white shadow-2xl space-y-5">
+            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+              <h3 className="text-lg font-bold text-white tracking-tight">
+                💼 Proposta por {negotiatingPlayer.name}
+              </h3>
+              <span className="rounded bg-zinc-800 px-2 py-0.5 text-xs font-bold text-zinc-300">
+                {negotiatingPlayer.position}
+              </span>
+            </div>
 
-            <div className="border-2 border-black bg-white p-3 space-y-2 text-xs">
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-4 space-y-2 text-xs font-mono">
               <div className="flex justify-between">
-                <span>Valor de Mercado:</span>
-                <strong>€{negotiatingPlayer.marketValue.toLocaleString()}</strong>
+                <span className="text-zinc-400">Valor de Mercado:</span>
+                <strong className="text-white">€{negotiatingPlayer.marketValue.toLocaleString()}</strong>
               </div>
               <div className="flex justify-between">
-                <span>Cláusula de Rescisão:</span>
-                <strong>€{(negotiatingPlayer.releaseClause || Math.round(negotiatingPlayer.marketValue * 1.5)).toLocaleString()}</strong>
+                <span className="text-zinc-400">Cláusula de Rescisão:</span>
+                <strong className="text-rose-400">€{(negotiatingPlayer.releaseClause || Math.round(negotiatingPlayer.marketValue * 1.5)).toLocaleString()}</strong>
               </div>
               <div className="flex justify-between">
-                <span>O teu saldo:</span>
-                <span className="text-green-600 font-bold">€{userClub.budget.toLocaleString()}</span>
+                <span className="text-zinc-400">O teu saldo em tesouraria:</span>
+                <span className="text-emerald-400 font-bold">€{userClub.budget.toLocaleString()}</span>
               </div>
             </div>
 
-            <div className="space-y-1">
-              <label className="text-xs font-black uppercase block">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-zinc-300 block">
                 Valor da tua Proposta (€):
               </label>
               <input
                 type="number"
                 value={bidInput}
                 onChange={(e) => setBidInput(e.target.value)}
-                className="w-full border-2 border-black bg-white p-2.5 font-mono font-bold text-sm"
+                className="w-full rounded-xl border border-zinc-700 bg-zinc-950 p-3 font-mono font-bold text-base text-white focus:border-amber-500 focus:outline-none"
               />
             </div>
 
             {offerResult && (
               <div
-                className={`border-2 border-black p-3 text-xs font-bold ${
+                className={`rounded-2xl border p-4 text-xs font-semibold ${
                   offerResult.type === 'accepted'
-                    ? 'bg-green-200 text-green-900'
+                    ? 'border-emerald-500/40 bg-emerald-950/40 text-emerald-200'
                     : offerResult.type === 'counter_offer'
-                    ? 'bg-amber-200 text-amber-900'
-                    : 'bg-red-200 text-red-900'
+                    ? 'border-amber-500/40 bg-amber-950/40 text-amber-200'
+                    : 'border-rose-500/40 bg-rose-950/40 text-rose-200'
                 }`}
               >
                 {offerResult.message}
@@ -510,7 +534,7 @@ export const TransferMarket: React.FC = () => {
                     onClick={() => {
                       setBidInput(offerResult.counterAmount!.toString());
                     }}
-                    className="block mt-2 underline font-black"
+                    className="block mt-2 font-bold underline hover:text-white"
                   >
                     Aceitar Contraproposta de €{offerResult.counterAmount.toLocaleString()}
                   </button>
@@ -518,18 +542,18 @@ export const TransferMarket: React.FC = () => {
               </div>
             )}
 
-            <div className="flex gap-2 pt-2">
+            <div className="flex gap-3 pt-2">
               <button
                 onClick={handleSubmitBid}
-                className="flex-1 border-2 border-black bg-black p-2.5 font-black uppercase text-white hover:bg-zinc-800 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] text-xs"
+                className="flex-1 rounded-xl bg-amber-500 py-3 font-bold text-xs text-zinc-950 hover:bg-amber-400 active:scale-[0.98] transition-all shadow-lg shadow-amber-500/20"
               >
-                Submeter Proposta à Direção
+                Submeter Proposta ao Clube
               </button>
               <button
                 onClick={() => setNegotiatingPlayer(null)}
-                className="border-2 border-black bg-zinc-200 px-4 py-2.5 font-black uppercase text-black hover:bg-zinc-300 text-xs"
+                className="rounded-xl border border-zinc-700 bg-zinc-800 px-5 py-3 font-semibold text-xs text-zinc-300 hover:text-white hover:bg-zinc-700 transition-all"
               >
-                Fechar
+                Cancelar
               </button>
             </div>
           </div>

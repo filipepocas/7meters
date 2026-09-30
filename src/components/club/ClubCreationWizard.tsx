@@ -169,27 +169,27 @@ export const ClubCreationWizard: React.FC<ClubCreationWizardProps> = ({ onComple
   const arenasList = searchArenasCatalog(arenaSearch, 'TODOS', 12);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 overflow-y-auto">
-      <div className="w-full max-w-4xl my-8 border-4 border-black bg-white p-6 shadow-[10px_10px_0px_0px_rgba(250,204,21,1)] dark:bg-zinc-900 dark:border-white dark:text-white">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 overflow-y-auto backdrop-blur-md">
+      <div className="w-full max-w-4xl my-8 rounded-3xl border border-zinc-800 bg-zinc-900 p-6 text-white shadow-2xl">
         
         {/* Cabeçalho do Wizard */}
-        <div className="border-b-4 border-black pb-4 mb-6 dark:border-white">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
+        <div className="border-b border-zinc-800 pb-4 mb-6">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
             <div>
-              <span className="border-2 border-black bg-yellow-400 px-2 py-0.5 font-mono text-xs font-black uppercase text-black">
-                7meters • Criação de Clube de Raiz
+              <span className="rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 px-3 py-1 font-mono text-[11px] font-bold">
+                7meters · Criação de Clube de Raiz
               </span>
-              <h2 className="mt-1 text-3xl font-black uppercase tracking-tight">
+              <h2 className="mt-2 text-2xl font-bold tracking-tight text-white">
                 Passo {step} de 6: {
                   step === 1 && 'Identidade do Emblema'
                 }{
-                  step === 2 && 'Camisola & Cores (1000 Opções)'
+                  step === 2 && 'Camisola & Cores'
                 }{
-                  step === 3 && 'Escolha do Pavilhão (1000 Arenas)'
+                  step === 3 && 'Escolha do Pavilhão Oficial'
                 }{
-                  step === 4 && 'Contratação da Equipa Técnica (Staff)'
+                  step === 4 && 'Contratação da Equipa Técnica'
                 }{
-                  step === 5 && 'Contratação do Plantel de Jogadores'
+                  step === 5 && 'Contratação do Plantel Inicial'
                 }{
                   step === 6 && 'Inscrição na Divisão & Orçamento'
                 }
@@ -197,16 +197,16 @@ export const ClubCreationWizard: React.FC<ClubCreationWizardProps> = ({ onComple
             </div>
 
             {/* Marcadores de passos */}
-            <div className="flex gap-1.5 font-mono font-black">
+            <div className="flex gap-2 font-mono">
               {[1, 2, 3, 4, 5, 6].map((num) => (
                 <div
                   key={num}
-                  className={`w-8 h-8 flex items-center justify-center border-2 border-black ${
+                  className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold transition-all ${
                     step === num
-                      ? 'bg-yellow-400 text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]'
+                      ? 'bg-amber-500 text-zinc-950 font-black shadow-md shadow-amber-500/30'
                       : step > num
-                      ? 'bg-green-500 text-white'
-                      : 'bg-zinc-100 text-zinc-400 dark:bg-zinc-800'
+                      ? 'bg-emerald-600 text-white'
+                      : 'bg-zinc-800 text-zinc-500'
                   }`}
                 >
                   {num}
@@ -282,7 +282,7 @@ export const ClubCreationWizard: React.FC<ClubCreationWizardProps> = ({ onComple
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
               {/* Pré-visualização do Equipamento */}
-              <div className="flex flex-col items-center justify-center border-4 border-black bg-zinc-100 p-8 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:border-white dark:bg-zinc-800">
+              <div className="flex flex-col items-center justify-center rounded-2xl border border-zinc-800 bg-zinc-950/60 p-8 shadow-inner">
                 <JerseyVisual
                   jersey={{
                     id: jerseyId,
@@ -294,10 +294,10 @@ export const ClubCreationWizard: React.FC<ClubCreationWizardProps> = ({ onComple
                   size="xl"
                 />
                 <div className="mt-4 font-mono text-center">
-                  <span className="border border-black bg-black text-white px-2 py-0.5 text-xs font-black uppercase">
+                  <span className="rounded-full border border-amber-500/30 bg-amber-500/20 text-amber-300 px-3 py-1 text-xs font-bold uppercase">
                     Modelo #{jerseyId}
                   </span>
-                  <div className="mt-1 font-black text-sm uppercase">{clubName}</div>
+                  <div className="mt-1 font-bold text-sm uppercase text-white">{clubName}</div>
                 </div>
               </div>
 
@@ -396,28 +396,28 @@ export const ClubCreationWizard: React.FC<ClubCreationWizardProps> = ({ onComple
               </p>
 
               {/* Pavilhão Atualmente Selecionado */}
-              <div className="mt-4 border-4 border-black bg-zinc-900 text-white p-4 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:border-white">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-                  <div className="relative h-44 overflow-hidden border-2 border-white">
+              <div className="mt-4 rounded-2xl border border-zinc-800 bg-zinc-950/60 text-white p-5 backdrop-blur">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-center">
+                  <div className="relative h-44 overflow-hidden rounded-xl border border-zinc-800">
                     <img
                       src={selectedArena.imagePath}
                       alt={selectedArena.name}
                       referrerPolicy="no-referrer"
                       className="w-full h-full object-cover filter brightness-105"
                     />
-                    <span className="absolute top-2 left-2 bg-yellow-400 text-black px-2 py-0.5 text-xs font-black uppercase font-mono">
+                    <span className="absolute top-2 left-2 rounded-lg bg-amber-500/90 text-zinc-950 px-2.5 py-0.5 text-xs font-bold uppercase font-mono">
                       {selectedArena.tier}
                     </span>
                   </div>
 
                   <div className="md:col-span-2 space-y-2 font-mono">
-                    <span className="text-xs text-yellow-400 font-bold uppercase">PAVILHÃO SELECIONADO:</span>
-                    <h3 className="text-2xl font-black uppercase text-white">{selectedArena.name}</h3>
+                    <span className="text-xs text-amber-400 font-bold uppercase">PAVILHÃO SELECIONADO:</span>
+                    <h3 className="text-2xl font-black uppercase text-white tracking-tight">{selectedArena.name}</h3>
                     <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div>Lotação: <strong>{selectedArena.capacity.toLocaleString()} lugares</strong></div>
-                      <div>Preço Bilhete: <strong>€{selectedArena.ticketPrice.toFixed(2)}</strong></div>
-                      <div>Custo Manutenção: <strong>€{(selectedArena.rentalOrMaintenanceCost || 1200).toLocaleString()}/mês</strong></div>
-                      <div>Bónus de Prestígio: <strong>⭐ {selectedArena.prestigeBonus}/10</strong></div>
+                      <div>Lotação: <strong className="text-white">{selectedArena.capacity.toLocaleString()} lugares</strong></div>
+                      <div>Preço Bilhete: <strong className="text-emerald-400">€{selectedArena.ticketPrice.toFixed(2)}</strong></div>
+                      <div>Custo Manutenção: <strong className="text-zinc-300">€{(selectedArena.rentalOrMaintenanceCost || 1200).toLocaleString()}/mês</strong></div>
+                      <div>Bónus de Prestígio: <strong className="text-amber-300">⭐ {selectedArena.prestigeBonus}/10</strong></div>
                     </div>
                   </div>
                 </div>
@@ -619,14 +619,14 @@ export const ClubCreationWizard: React.FC<ClubCreationWizardProps> = ({ onComple
             </div>
 
             {/* Orçamento Inicial */}
-            <div className="border-4 border-black bg-yellow-300 p-6 text-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-6 text-white backdrop-blur">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                  <span className="font-mono text-xs font-black uppercase">Orçamento Base Disponível</span>
-                  <div className="text-4xl font-black font-mono mt-1">
+                  <span className="font-mono text-xs font-semibold text-zinc-400 uppercase">Orçamento Base Disponível</span>
+                  <div className="text-3xl font-bold font-mono mt-1 text-emerald-400">
                     €{startingBudget.toLocaleString()}
                   </div>
-                  <p className="text-xs font-bold mt-1">
+                  <p className="text-xs text-zinc-400 mt-1">
                     Orçamento inicial padrão atribuído a todos os clubes fundadores. Podes simular injeções de capital financeiro extra a qualquer momento.
                   </p>
                 </div>
@@ -635,7 +635,7 @@ export const ClubCreationWizard: React.FC<ClubCreationWizardProps> = ({ onComple
                   <button
                     type="button"
                     onClick={() => setStartingBudget((prev) => prev + 500000)}
-                    className="border-2 border-black bg-white px-4 py-2 font-mono text-xs font-black uppercase hover:bg-zinc-100 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                    className="rounded-xl border border-zinc-700 bg-zinc-800/80 px-4 py-2 font-mono text-xs font-bold uppercase text-zinc-200 hover:bg-zinc-700 transition-colors"
                   >
                     + €500k Extra
                   </button>
@@ -646,12 +646,12 @@ export const ClubCreationWizard: React.FC<ClubCreationWizardProps> = ({ onComple
         )}
 
         {/* Navegação entre Passos */}
-        <div className="mt-8 flex justify-between border-t-4 border-black pt-4 dark:border-white">
+        <div className="mt-8 flex justify-between border-t border-zinc-800 pt-4">
           <button
             type="button"
             disabled={step === 1}
             onClick={() => setStep((prev) => Math.max(1, prev - 1))}
-            className="border-2 border-black bg-zinc-200 px-6 py-2.5 font-black uppercase text-black hover:bg-zinc-300 disabled:opacity-30 dark:bg-zinc-800 dark:text-white dark:border-white"
+            className="rounded-xl border border-zinc-700 bg-zinc-800 px-6 py-2.5 text-xs font-bold uppercase text-zinc-300 hover:bg-zinc-700 disabled:opacity-30 transition-colors"
           >
             ← Voltar
           </button>
@@ -660,7 +660,7 @@ export const ClubCreationWizard: React.FC<ClubCreationWizardProps> = ({ onComple
             <button
               type="button"
               onClick={() => setStep((prev) => Math.min(6, prev + 1))}
-              className="border-2 border-black bg-yellow-400 px-8 py-2.5 font-black uppercase text-black hover:bg-yellow-300 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]"
+              className="rounded-xl bg-amber-500 px-8 py-2.5 text-xs font-bold uppercase text-zinc-950 hover:bg-amber-400 transition-colors shadow-lg shadow-amber-500/20"
             >
               Seguinte →
             </button>
@@ -668,7 +668,7 @@ export const ClubCreationWizard: React.FC<ClubCreationWizardProps> = ({ onComple
             <button
               type="button"
               onClick={handleFinish}
-              className="border-4 border-black bg-green-500 px-10 py-3 font-black uppercase text-white hover:bg-green-600 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-lg transition-all animate-pulse"
+              className="rounded-xl bg-emerald-500 px-10 py-3 text-sm font-bold uppercase text-zinc-950 hover:bg-emerald-400 transition-all shadow-lg shadow-emerald-500/20"
             >
               🤾 Fundar Clube e Começar a Época!
             </button>
