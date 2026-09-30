@@ -195,8 +195,96 @@ export const SquadManagementView: React.FC = () => {
         </div>
       </div>
 
-      {/* Tabela Moderna de Atletas */}
-      <div className="overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900/60 backdrop-blur">
+      {/* LISTAGEM DE ATLETAS: Versão Mobile Card + Versão Desktop Tabela */}
+      {/* 1. Mobile Cards (< md) */}
+      <div className="md:hidden space-y-3">
+        {filteredSquad.map((player) => {
+          const isTired = player.energyLevel < 50;
+          const isExpiring = player.contractYearsRemaining <= 1;
+
+          return (
+            <div
+              key={player.id}
+              className="rounded-2xl border border-zinc-800 bg-zinc-900/80 p-3.5 shadow-md backdrop-blur space-y-3"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className={`rounded-lg px-2 py-0.5 text-[10px] font-bold border ${getPosBadgeColor(player.position)}`}>
+                    {player.position}
+                  </span>
+                  <div>
+                    <h4 className="font-bold text-sm text-white">{player.name}</h4>
+                    <p className="text-[11px] text-zinc-400">
+                      {player.age} anos · {player.country}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-col items-end">
+                  <span className="font-mono font-black text-base text-blue-400">
+                    OVR {player.overallRating}
+                  </span>
+                  <div className="mt-0.5">{getMoralBadge(player.moralLevel)}</div>
+                </div>
+              </div>
+
+              {/* Barra de Energia e Info de Contrato */}
+              <div className="space-y-1 bg-zinc-950/50 p-2.5 rounded-xl border border-zinc-800/60 font-mono text-[11px]">
+                <div className="flex items-center justify-between">
+                  <span className="text-zinc-400">Energia:</span>
+                  <span className={`font-bold ${isTired ? 'text-red-400 animate-pulse' : 'text-emerald-400'}`}>
+                    ⚡ {player.energyLevel}%
+                  </span>
+                </div>
+                <div className="h-1.5 w-full rounded-full bg-zinc-800 overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all ${
+                      isTired ? 'bg-red-500' : player.energyLevel > 75 ? 'bg-emerald-500' : 'bg-amber-500'
+                    }`}
+                    style={{ width: `${player.energyLevel}%` }}
+                  />
+                </div>
+                <div className="flex items-center justify-between pt-1 text-[10px] text-zinc-300">
+                  <span>€{(player.wage || 300).toLocaleString()}/sem</span>
+                  <span>
+                    {player.contractYearsRemaining} ano(s){' '}
+                    {isExpiring && <span className="text-red-400 font-bold">(Último ano!)</span>}
+                  </span>
+                </div>
+              </div>
+
+              {/* Botões de Ação Mobile */}
+              <div className="grid grid-cols-3 gap-1.5 pt-1">
+                <button
+                  onClick={() => setSelectedPlayer(player)}
+                  className="rounded-xl border border-zinc-700 bg-zinc-800 py-2 text-xs font-semibold text-zinc-200 hover:bg-zinc-700 active:scale-95 text-center"
+                >
+                  🔬 Ficha
+                </button>
+                <button
+                  onClick={() => setRenewalPlayer(player)}
+                  className="rounded-xl bg-emerald-600/20 border border-emerald-500/30 py-2 text-xs font-semibold text-emerald-400 hover:bg-emerald-600/30 active:scale-95 text-center"
+                >
+                  📝 Renovar
+                </button>
+                <button
+                  onClick={() => handleToggleTransferList(player)}
+                  className={`rounded-xl py-2 text-xs font-semibold transition-colors active:scale-95 text-center ${
+                    player.transferListed
+                      ? 'bg-rose-500/20 border border-rose-500/30 text-rose-400'
+                      : 'border border-zinc-800 text-zinc-400 bg-zinc-950/60'
+                  }`}
+                >
+                  {player.transferListed ? 'Mercado' : 'Vender'}
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* 2. Desktop Table (>= md) */}
+      <div className="hidden md:block overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900/60 backdrop-blur">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>

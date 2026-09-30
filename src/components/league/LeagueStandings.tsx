@@ -151,24 +151,24 @@ export const LeagueStandings: React.FC<LeagueStandingsProps> = ({ completedMatch
       </div>
 
       {/* Tabela Sofascore / Modern Sports Style */}
-      <div className="rounded-3xl border border-zinc-800 bg-zinc-900/60 p-6 backdrop-blur shadow-xl overflow-hidden">
-        <div className="overflow-x-auto">
+      <div className="rounded-3xl border border-zinc-800 bg-zinc-900/60 p-3 sm:p-6 backdrop-blur shadow-xl overflow-hidden">
+        <div className="overflow-x-auto scrollbar-none">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-zinc-800 text-[11px] uppercase tracking-wider text-zinc-400 font-semibold">
-                <th className="py-3 px-3 text-center w-12">#</th>
-                <th className="py-3 px-4">Clube</th>
-                <th className="py-3 px-3 text-center">J</th>
-                <th className="py-3 px-3 text-center text-emerald-400">V</th>
-                <th className="py-3 px-3 text-center text-amber-400">E</th>
-                <th className="py-3 px-3 text-center text-rose-400">D</th>
-                <th className="py-3 px-3 text-center">GM</th>
-                <th className="py-3 px-3 text-center">GS</th>
-                <th className="py-3 px-3 text-center">DG</th>
-                <th className="py-3 px-4 text-center font-bold text-white bg-zinc-800/40 rounded-t-xl">PTS</th>
+              <tr className="border-b border-zinc-800 text-[10px] sm:text-[11px] uppercase tracking-wider text-zinc-400 font-semibold">
+                <th className="py-2.5 sm:py-3 px-2 sm:px-3 text-center w-8 sm:w-12">#</th>
+                <th className="py-2.5 sm:py-3 px-2 sm:px-4">Clube</th>
+                <th className="py-2.5 sm:py-3 px-1.5 sm:px-3 text-center">J</th>
+                <th className="py-2.5 sm:py-3 px-1.5 sm:px-3 text-center text-emerald-400">V</th>
+                <th className="py-2.5 sm:py-3 px-1.5 sm:px-3 text-center text-amber-400">E</th>
+                <th className="py-2.5 sm:py-3 px-1.5 sm:px-3 text-center text-rose-400">D</th>
+                <th className="hidden sm:table-cell py-2.5 sm:py-3 px-2 sm:px-3 text-center">GM</th>
+                <th className="hidden sm:table-cell py-2.5 sm:py-3 px-2 sm:px-3 text-center">GS</th>
+                <th className="hidden xs:table-cell py-2.5 sm:py-3 px-1.5 sm:px-3 text-center">DG</th>
+                <th className="py-2.5 sm:py-3 px-2.5 sm:px-4 text-center font-bold text-white bg-zinc-800/40 rounded-t-xl">PTS</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-800/60 text-sm">
+            <tbody className="divide-y divide-zinc-800/60 text-xs sm:text-sm">
               {sortedStandings.map((row, index) => {
                 const isUserClub = userClub && row.clubId === userClub.id;
                 const isChampionZone = index === 0;
@@ -184,10 +184,10 @@ export const LeagueStandings: React.FC<LeagueStandingsProps> = ({ completedMatch
                         : 'hover:bg-zinc-800/40 text-zinc-300'
                     }`}
                   >
-                    <td className="py-3 px-3 text-center">
-                      <div className="flex items-center justify-center gap-1.5">
+                    <td className="py-2.5 sm:py-3 px-2 sm:px-3 text-center">
+                      <div className="flex items-center justify-center gap-1 sm:gap-1.5">
                         <span
-                          className={`w-1 h-5 rounded-full ${
+                          className={`w-1 h-4 sm:h-5 rounded-full ${
                             isChampionZone
                               ? 'bg-amber-400'
                               : isEuropeanZone
@@ -197,35 +197,35 @@ export const LeagueStandings: React.FC<LeagueStandingsProps> = ({ completedMatch
                               : 'bg-transparent'
                           }`}
                         />
-                        <span className={`font-mono text-xs tabular-nums ${isChampionZone ? 'text-amber-400 font-bold' : ''}`}>
+                        <span className={`font-mono text-[11px] sm:text-xs tabular-nums ${isChampionZone ? 'text-amber-400 font-bold' : ''}`}>
                           {index + 1}
                         </span>
                       </div>
                     </td>
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-2">
-                        <span className={`font-semibold ${isUserClub ? 'text-white font-bold' : 'text-zinc-200'}`}>
+                    <td className="py-2.5 sm:py-3 px-2 sm:px-4 max-w-[140px] sm:max-w-none">
+                      <div className="flex items-center gap-1.5 sm:gap-2 truncate">
+                        <span className={`truncate font-semibold ${isUserClub ? 'text-white font-bold' : 'text-zinc-200'}`}>
                           {row.clubName}
                         </span>
                         {isUserClub && (
-                          <span className="rounded-md bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-300 border border-amber-500/30">
+                          <span className="hidden sm:inline-block shrink-0 rounded-md bg-amber-500/20 px-1.5 py-0.2 text-[9px] font-bold text-amber-300 border border-amber-500/30">
                             A Tua Equipa
                           </span>
                         )}
                       </div>
                     </td>
-                    <td className="py-3 px-3 text-center font-mono text-xs tabular-nums text-zinc-400">{row.played}</td>
-                    <td className="py-3 px-3 text-center font-mono text-xs tabular-nums text-emerald-400 font-semibold">{row.won}</td>
-                    <td className="py-3 px-3 text-center font-mono text-xs tabular-nums text-amber-400">{row.drawn}</td>
-                    <td className="py-3 px-3 text-center font-mono text-xs tabular-nums text-rose-400">{row.lost}</td>
-                    <td className="py-3 px-3 text-center font-mono text-xs tabular-nums text-zinc-400">{row.goalsFor}</td>
-                    <td className="py-3 px-3 text-center font-mono text-xs tabular-nums text-zinc-400">{row.goalsAgainst}</td>
-                    <td className="py-3 px-3 text-center font-mono text-xs tabular-nums font-semibold">
+                    <td className="py-2.5 sm:py-3 px-1.5 sm:px-3 text-center font-mono text-[11px] sm:text-xs tabular-nums text-zinc-400">{row.played}</td>
+                    <td className="py-2.5 sm:py-3 px-1.5 sm:px-3 text-center font-mono text-[11px] sm:text-xs tabular-nums text-emerald-400 font-semibold">{row.won}</td>
+                    <td className="py-2.5 sm:py-3 px-1.5 sm:px-3 text-center font-mono text-[11px] sm:text-xs tabular-nums text-amber-400">{row.drawn}</td>
+                    <td className="py-2.5 sm:py-3 px-1.5 sm:px-3 text-center font-mono text-[11px] sm:text-xs tabular-nums text-rose-400">{row.lost}</td>
+                    <td className="hidden sm:table-cell py-2.5 sm:py-3 px-2 sm:px-3 text-center font-mono text-[11px] sm:text-xs tabular-nums text-zinc-400">{row.goalsFor}</td>
+                    <td className="hidden sm:table-cell py-2.5 sm:py-3 px-2 sm:px-3 text-center font-mono text-[11px] sm:text-xs tabular-nums text-zinc-400">{row.goalsAgainst}</td>
+                    <td className="hidden xs:table-cell py-2.5 sm:py-3 px-1.5 sm:px-3 text-center font-mono text-[11px] sm:text-xs tabular-nums font-semibold">
                       <span className={row.goalDifference > 0 ? 'text-emerald-400' : row.goalDifference < 0 ? 'text-rose-400' : 'text-zinc-400'}>
                         {row.goalDifference > 0 ? `+${row.goalDifference}` : row.goalDifference}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-center font-mono text-base font-bold text-white bg-zinc-800/30 tabular-nums">
+                    <td className="py-2.5 sm:py-3 px-2.5 sm:px-4 text-center font-mono text-sm sm:text-base font-bold text-white bg-zinc-800/30 tabular-nums">
                       {row.points}
                     </td>
                   </tr>

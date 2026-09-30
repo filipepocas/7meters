@@ -121,30 +121,30 @@ export const Dashboard: React.FC = () => {
       <header className="sticky top-0 z-40 border-b border-zinc-800/80 bg-zinc-950/85 backdrop-blur-xl shadow-lg">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           {/* Linha Superior: Logo, Identidade do Clube, Saldo e Ações Rápidas */}
-          <div className="flex h-16 items-center justify-between gap-4">
+          <div className="flex h-16 items-center justify-between gap-2 sm:gap-4">
             {/* Esquerda: Identidade do Clube */}
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 text-zinc-950 shadow-md">
-                <span className="font-mono text-sm font-black tracking-tighter">7M</span>
+            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+              <div className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 text-zinc-950 shadow-md">
+                <span className="font-mono text-xs sm:text-sm font-black tracking-tighter">7M</span>
               </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h1 className="text-base font-bold text-white tracking-tight sm:text-lg">
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <h1 className="text-sm sm:text-base md:text-lg font-bold text-white tracking-tight truncate max-w-[120px] sm:max-w-[200px] md:max-w-none">
                     {userClub.name}
                   </h1>
-                  <span className="rounded-md bg-zinc-800/90 px-2 py-0.5 font-mono text-[10px] font-semibold text-zinc-300 border border-zinc-700/60">
+                  <span className="shrink-0 rounded-md bg-zinc-800/90 px-1.5 sm:px-2 py-0.5 font-mono text-[9px] sm:text-[10px] font-semibold text-zinc-300 border border-zinc-700/60">
                     {userClub.shortName}
                   </span>
                 </div>
-                <div className="flex items-center gap-2 text-xs text-zinc-400">
+                <div className="flex items-center gap-1.5 text-[11px] sm:text-xs text-zinc-400">
                   <span className="text-amber-400 font-medium">Época {currentSeason} · Jornada {currentWeek}</span>
-                  <span>·</span>
-                  <span className="hidden sm:inline text-zinc-400">{currentDivision}</span>
+                  <span className="hidden sm:inline">·</span>
+                  <span className="hidden md:inline text-zinc-400 truncate">{currentDivision}</span>
                 </div>
               </div>
             </div>
 
-            {/* Centro: Indicadores Rápidos de Estado */}
+            {/* Centro: Indicadores Rápidos de Estado (Desktop / Grandes Ecrãs) */}
             <div className="hidden lg:flex items-center gap-3">
               {/* Tesouraria */}
               <div className="flex items-center gap-2.5 rounded-2xl border border-zinc-800 bg-zinc-900/60 px-3.5 py-1.5 shadow-sm">
@@ -189,29 +189,29 @@ export const Dashboard: React.FC = () => {
             </div>
 
             {/* Direita: Ações Principais */}
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-1.5 sm:gap-2.5">
               <PWAInstallButton />
 
               {/* Botão Avançar Semana */}
               <button
                 onClick={handleAdvanceWeek}
-                className="hidden sm:inline-flex items-center gap-1.5 rounded-xl border border-zinc-700 bg-zinc-800/80 px-3 py-1.5 text-xs font-semibold text-zinc-200 hover:bg-zinc-700 hover:text-white transition-all active:scale-[0.98]"
+                className="hidden sm:inline-flex items-center gap-1.5 rounded-xl border border-zinc-700 bg-zinc-800/80 px-2.5 sm:px-3 py-1.5 text-xs font-semibold text-zinc-200 hover:bg-zinc-700 hover:text-white transition-all active:scale-[0.98]"
               >
-                <span>⏩ Avançar Semana</span>
+                <span>⏩ Avançar</span>
               </button>
 
               {/* Botão Jogar Partida */}
               <button
                 onClick={() => setActiveTab('match')}
-                className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-1.5 text-xs font-bold text-zinc-950 hover:bg-amber-400 active:scale-[0.98] transition-all shadow-md shadow-amber-500/20"
+                className="inline-flex items-center gap-1 sm:gap-2 rounded-xl bg-amber-500 px-2.5 sm:px-4 py-1.5 text-xs font-bold text-zinc-950 hover:bg-amber-400 active:scale-[0.98] transition-all shadow-md shadow-amber-500/20"
               >
-                <span>🤾 Jogar Partida</span>
+                <span>🤾 <span className="hidden xs:inline">Jogar</span></span>
               </button>
 
               {currentUser?.isAdmin && (
                 <button
                   onClick={() => setIsAdminModalOpen(true)}
-                  className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-2 text-amber-400 hover:bg-amber-500/20"
+                  className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-1.5 sm:p-2 text-amber-400 hover:bg-amber-500/20"
                   title="Painel Mestre Admin"
                 >
                   👑
@@ -223,14 +223,14 @@ export const Dashboard: React.FC = () => {
                 {currentUser ? (
                   <button
                     onClick={logout}
-                    className="rounded-lg px-2.5 py-1 text-xs font-medium text-zinc-400 hover:text-white hover:bg-zinc-800/60"
+                    className="rounded-lg px-2 sm:px-2.5 py-1 text-[11px] sm:text-xs font-medium text-zinc-400 hover:text-white hover:bg-zinc-800/60"
                   >
                     Sair
                   </button>
                 ) : (
                   <button
                     onClick={() => setIsAuthModalOpen(true)}
-                    className="rounded-lg px-2.5 py-1 text-xs font-medium text-amber-400 hover:text-amber-300"
+                    className="rounded-lg px-2 sm:px-2.5 py-1 text-[11px] sm:text-xs font-medium text-amber-400 hover:text-amber-300"
                   >
                     Entrar
                   </button>
@@ -239,8 +239,32 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
 
+          {/* Sub-Barra Compacta Exclusiva para Mobile e Tablets (< lg) */}
+          <div className="flex lg:hidden items-center justify-between border-t border-zinc-800/60 py-2 px-1 text-[11px] font-mono text-zinc-300 gap-2">
+            <div className="flex items-center gap-1 text-emerald-400 font-bold truncate">
+              <span>💰</span>
+              <span>€{userClub.budget.toLocaleString()}</span>
+            </div>
+            <div className="flex items-center gap-1 text-zinc-300">
+              <span>🏛️</span>
+              <span className={boardConfidence > 60 ? 'text-emerald-400' : 'text-amber-400'}>
+                {boardConfidence}%
+              </span>
+            </div>
+            <div className="flex items-center gap-1 text-blue-400">
+              <span>⚡</span>
+              <span>{avgEnergy}%</span>
+            </div>
+            <button
+              onClick={handleAdvanceWeek}
+              className="sm:hidden rounded-lg bg-zinc-800 border border-zinc-700 px-2 py-0.5 text-[10px] font-bold text-zinc-200 active:scale-95"
+            >
+              ⏩ Avançar
+            </button>
+          </div>
+
           {/* Linha Inferior: Barra de Navegação por Separadores Modernos */}
-          <nav className="flex space-x-1 overflow-x-auto py-2 scrollbar-none border-t border-zinc-800/40">
+          <nav className="flex space-x-1.5 overflow-x-auto py-2 scrollbar-none border-t border-zinc-800/40 touch-pan-x">
             {[
               { id: 'overview', label: 'Visão Geral', icon: '📊' },
               { id: 'match', label: 'Partida ao Vivo', icon: '🤾', badge: 'Matchday' },
@@ -255,21 +279,21 @@ export const Dashboard: React.FC = () => {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as ActiveTab)}
-                  className={`group relative flex shrink-0 items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-medium transition-all ${
+                  className={`group relative flex shrink-0 items-center gap-1.5 sm:gap-2 rounded-xl px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-[11px] sm:text-xs font-medium transition-all ${
                     isActive
                       ? 'bg-zinc-800/90 text-white shadow-sm ring-1 ring-zinc-700'
                       : 'text-zinc-400 hover:bg-zinc-900/60 hover:text-zinc-200'
                   }`}
                 >
                   <span className="text-sm">{tab.icon}</span>
-                  <span>{tab.label}</span>
+                  <span className="whitespace-nowrap">{tab.label}</span>
                   {tab.badge && (
-                    <span className="ml-1 rounded-full bg-amber-500/20 px-1.5 py-0.2 text-[9px] font-bold text-amber-300 border border-amber-500/30">
+                    <span className="hidden xs:inline ml-0.5 rounded-full bg-amber-500/20 px-1.5 py-0.2 text-[9px] font-bold text-amber-300 border border-amber-500/30">
                       {tab.badge}
                     </span>
                   )}
                   {isActive && (
-                    <span className="absolute bottom-0 left-3 right-3 h-0.5 bg-gradient-to-r from-amber-500 to-amber-300 rounded-full" />
+                    <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-gradient-to-r from-amber-500 to-amber-300 rounded-full" />
                   )}
                 </button>
               );
@@ -302,74 +326,77 @@ export const Dashboard: React.FC = () => {
           <div className="space-y-6">
             {/* 1. MATCHDAY HERO CARD (Moderno com Backdrop 3D do Pavilhão de Andebol) */}
             <div className="relative overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900 shadow-xl">
-              <div className="relative h-64 md:h-80 w-full overflow-hidden">
+              <div className="relative min-h-[380px] sm:min-h-[320px] md:h-80 w-full overflow-hidden flex flex-col justify-between">
                 <img
                   src={arenaImg}
                   alt={userClub.arena.name}
                   referrerPolicy="no-referrer"
-                  className="w-full h-full object-cover filter brightness-[0.65] contrast-[1.1] transition-transform duration-700 hover:scale-105"
+                  className="absolute inset-0 w-full h-full object-cover filter brightness-[0.6] contrast-[1.1] transition-transform duration-700 hover:scale-105"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/60 to-transparent" />
-                <div className="absolute inset-0 bg-gradient-to-r from-zinc-950/80 via-transparent to-zinc-950/80" />
+                <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/70 to-zinc-950/40" />
+                <div className="absolute inset-0 bg-gradient-to-r from-zinc-950/90 via-transparent to-zinc-950/90" />
 
                 {/* Badge Superior */}
-                <div className="absolute top-4 left-4 flex items-center gap-2">
-                  <span className="rounded-full bg-amber-500/20 backdrop-blur-md border border-amber-500/40 px-3 py-1 font-mono text-[11px] font-bold text-amber-300">
-                    Jornada {currentWeek} · Andebol 1
+                <div className="relative z-10 p-4 flex items-center justify-between gap-2">
+                  <span className="rounded-full bg-amber-500/20 backdrop-blur-md border border-amber-500/40 px-3 py-1 font-mono text-[10px] sm:text-[11px] font-bold text-amber-300">
+                    Jornada {currentWeek} de 22 · Andebol 1
                   </span>
-                  <span className="hidden sm:inline-flex rounded-full bg-zinc-900/80 backdrop-blur-md border border-zinc-700 px-3 py-1 text-[11px] text-zinc-300">
+                  <span className="rounded-full bg-zinc-900/80 backdrop-blur-md border border-zinc-700 px-2.5 sm:px-3 py-1 text-[10px] sm:text-[11px] text-zinc-300 truncate max-w-[180px] sm:max-w-none">
                     🏟️ {userClub.arena.name}
                   </span>
                 </div>
 
-                {/* Confronto Central */}
-                <div className="absolute inset-x-0 bottom-6 px-4 md:px-8 flex flex-col md:flex-row items-center justify-between gap-6">
-                  <div className="flex items-center justify-center gap-6 text-center md:text-left w-full md:w-auto">
+                {/* Confronto Central e Ações */}
+                <div className="relative z-10 p-4 sm:p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-5">
+                  <div className="flex items-center justify-between sm:justify-center gap-2 sm:gap-6 text-center w-full md:w-auto">
                     {/* Casa */}
-                    <div>
-                      <span className="text-[11px] font-semibold uppercase tracking-wider text-amber-400">
-                        Equipa da Casa
+                    <div className="flex-1 sm:flex-initial text-center sm:text-left min-w-0">
+                      <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-amber-400 block">
+                        Casa
                       </span>
-                      <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight">
+                      <h2 className="text-base sm:text-2xl md:text-3xl font-black text-white tracking-tight truncate max-w-[125px] sm:max-w-[200px] md:max-w-none">
                         {userClub.name}
                       </h2>
-                      <div className="text-xs text-zinc-400 font-mono mt-0.5">
-                        OVR Plantel: {avgOvr} · Forma: V-V-E
+                      <div className="text-[10px] sm:text-xs text-zinc-400 font-mono mt-0.5">
+                        OVR: {avgOvr} · ⚡ {avgEnergy}%
                       </div>
                     </div>
 
-                    <div className="flex flex-col items-center px-4">
-                      <span className="text-xs font-mono font-bold text-zinc-500 uppercase tracking-widest">VS</span>
-                      <span className="text-[10px] text-zinc-400 font-mono mt-1">60 Minutos</span>
+                    {/* Divisor VS */}
+                    <div className="flex flex-col items-center px-1 sm:px-3 shrink-0">
+                      <span className="rounded-full bg-zinc-800/90 border border-zinc-700 px-2 sm:px-2.5 py-0.5 text-[10px] sm:text-xs font-mono font-bold text-amber-400 uppercase tracking-wider shadow">
+                        VS
+                      </span>
+                      <span className="text-[9px] text-zinc-400 font-mono mt-0.5 hidden xs:inline">60 Min</span>
                     </div>
 
                     {/* Visitante */}
-                    <div>
-                      <span className="text-[11px] font-semibold uppercase tracking-wider text-blue-400">
-                        Visitante
+                    <div className="flex-1 sm:flex-initial text-center sm:text-right min-w-0">
+                      <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-blue-400 block">
+                        Fora
                       </span>
-                      <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight">
+                      <h2 className="text-base sm:text-2xl md:text-3xl font-black text-white tracking-tight truncate max-w-[125px] sm:max-w-[200px] md:max-w-none">
                         {opponentClub.name}
                       </h2>
-                      <div className="text-xs text-zinc-400 font-mono mt-0.5">
-                        OVR Plantel: 72 · Nível: Divisão de Honra
+                      <div className="text-[10px] sm:text-xs text-zinc-400 font-mono mt-0.5">
+                        OVR: 72 · Div. Honra
                       </div>
                     </div>
                   </div>
 
                   {/* Ação Primária: Entrar na Partida */}
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-center">
                     <button
                       onClick={() => setActiveTab('tactics')}
-                      className="rounded-xl border border-zinc-700 bg-zinc-900/80 backdrop-blur px-4 py-2.5 text-xs font-semibold text-zinc-200 hover:bg-zinc-800 transition-all"
+                      className="flex-1 sm:flex-initial rounded-xl border border-zinc-700 bg-zinc-900/80 backdrop-blur px-3.5 sm:px-4 py-2.5 text-xs font-semibold text-zinc-200 hover:bg-zinc-800 transition-all text-center"
                     >
                       Ajustar Tática
                     </button>
                     <button
                       onClick={() => setActiveTab('match')}
-                      className="rounded-xl bg-amber-500 px-6 py-2.5 text-sm font-bold text-zinc-950 hover:bg-amber-400 active:scale-[0.98] transition-all shadow-lg shadow-amber-500/20"
+                      className="flex-1 sm:flex-initial rounded-xl bg-amber-500 px-4 sm:px-6 py-2.5 text-xs sm:text-sm font-bold text-zinc-950 hover:bg-amber-400 active:scale-[0.98] transition-all shadow-lg shadow-amber-500/20 text-center"
                     >
-                      🎮 Jogar Partida ao Vivo
+                      🎮 Jogar Partida
                     </button>
                   </div>
                 </div>

@@ -229,52 +229,52 @@ export const MatchLiveViewer: React.FC<MatchLiveViewerProps> = ({
           </div>
 
           {/* PLACARD CENTRAL DE ANDEBOL */}
-          <div className="absolute inset-x-0 bottom-8 flex flex-col items-center px-4">
-            <div className="flex items-center justify-between w-full max-w-3xl">
+          <div className="absolute inset-x-0 bottom-4 sm:bottom-8 flex flex-col items-center px-2 sm:px-4">
+            <div className="flex items-center justify-between w-full max-w-3xl gap-1 sm:gap-4">
               {/* Equipa da Casa */}
-              <div className="text-center md:text-left flex-1">
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-amber-400">
+              <div className="text-center sm:text-left flex-1 min-w-0">
+                <span className="text-[9px] sm:text-[11px] font-semibold uppercase tracking-wider text-amber-400 block">
                   Casa
                 </span>
-                <h2 className="text-xl md:text-3xl font-extrabold text-white tracking-tight truncate">
+                <h2 className="text-xs sm:text-xl md:text-3xl font-extrabold text-white tracking-tight truncate">
                   {homeClub.name}
                 </h2>
-                <div className="text-xs text-zinc-400 font-mono mt-0.5">
+                <div className="text-[9px] sm:text-xs text-zinc-400 font-mono mt-0.5 truncate">
                   Tática: {activeHomeTactics.defenseSystem}
                 </div>
               </div>
 
               {/* Cubo do Marcador Digital */}
-              <div className="mx-4 flex flex-col items-center rounded-2xl border border-zinc-700/80 bg-zinc-900/90 px-6 py-3.5 shadow-2xl backdrop-blur-xl">
-                <span className="rounded-full bg-zinc-800 px-2.5 py-0.5 font-mono text-[10px] font-bold text-amber-300 border border-zinc-700">
+              <div className="mx-1 sm:mx-4 shrink-0 flex flex-col items-center rounded-2xl border border-zinc-700/80 bg-zinc-900/90 px-3 sm:px-6 py-1.5 sm:py-3.5 shadow-2xl backdrop-blur-xl">
+                <span className="rounded-full bg-zinc-800 px-2 py-0.5 font-mono text-[9px] sm:text-[10px] font-bold text-amber-300 border border-zinc-700 whitespace-nowrap">
                   {currentMinute === 0 && 'A Iniciar...'}
-                  {currentMinute > 0 && currentMinute < 30 && `1ª Parte · ${currentMinute}'`}
+                  {currentMinute > 0 && currentMinute < 30 && `1ªP · ${currentMinute}'`}
                   {currentMinute === 30 && '⏱️ Intervalo'}
-                  {currentMinute > 30 && currentMinute < 60 && `2ª Parte · ${currentMinute}'`}
-                  {currentMinute >= 60 && '🏁 Apito Final'}
+                  {currentMinute > 30 && currentMinute < 60 && `2ªP · ${currentMinute}'`}
+                  {currentMinute >= 60 && '🏁 Final'}
                 </span>
 
-                <div className="my-1 flex items-center gap-3 font-mono text-5xl md:text-6xl font-black text-white tracking-tight tabular-nums">
+                <div className="my-0.5 sm:my-1 flex items-center gap-1.5 sm:gap-3 font-mono text-3xl sm:text-5xl md:text-6xl font-black text-white tracking-tight tabular-nums">
                   <span>{partialHomeGoals}</span>
-                  <span className="text-zinc-600 text-3xl font-light">-</span>
+                  <span className="text-zinc-600 text-xl sm:text-3xl font-light">-</span>
                   <span>{partialAwayGoals}</span>
                 </div>
 
-                <span className="text-[10px] font-mono text-zinc-400">
-                  Andebol Oficial (60 Min)
+                <span className="text-[8px] sm:text-[10px] font-mono text-zinc-400 hidden xs:inline">
+                  Andebol Oficial (60m)
                 </span>
               </div>
 
               {/* Visitante */}
-              <div className="text-center md:text-right flex-1">
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-blue-400">
+              <div className="text-center sm:text-right flex-1 min-w-0">
+                <span className="text-[9px] sm:text-[11px] font-semibold uppercase tracking-wider text-blue-400 block">
                   Fora
                 </span>
-                <h2 className="text-xl md:text-3xl font-extrabold text-white tracking-tight truncate">
+                <h2 className="text-xs sm:text-xl md:text-3xl font-extrabold text-white tracking-tight truncate">
                   {awayClub.name}
                 </h2>
-                <div className="text-xs text-zinc-400 font-mono mt-0.5">
-                  Nível: Divisão de Honra
+                <div className="text-[9px] sm:text-xs text-zinc-400 font-mono mt-0.5 truncate">
+                  Div. Honra
                 </div>
               </div>
             </div>
@@ -290,52 +290,52 @@ export const MatchLiveViewer: React.FC<MatchLiveViewerProps> = ({
         </div>
 
         {/* Painel de Controlo do Jogo */}
-        <div className="p-4 bg-zinc-900/80 border-t border-zinc-800 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-2.5">
+        <div className="p-3 sm:p-4 bg-zinc-900/80 border-t border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
+          <div className="flex items-center justify-center gap-1.5 sm:gap-2.5 w-full sm:w-auto">
             <button
               onClick={() => {
                 setTimeoutFeedback(null);
                 setIsPlaying(!isPlaying);
               }}
               disabled={currentMinute >= 60}
-              className={`rounded-xl px-5 py-2.5 text-xs font-bold transition-all shadow-md active:scale-[0.98] ${
+              className={`flex-1 sm:flex-initial rounded-xl px-3 sm:px-5 py-2 sm:py-2.5 text-xs font-bold transition-all shadow-md active:scale-[0.98] text-center ${
                 isPlaying
                   ? 'bg-amber-500 text-zinc-950 hover:bg-amber-400'
                   : 'bg-emerald-600 text-white hover:bg-emerald-500'
               } disabled:opacity-40`}
             >
-              {isPlaying ? '⏸️ Pausar' : currentMinute === 30 ? '▶️ 2ª Parte' : '▶️ Iniciar / Continuar'}
+              {isPlaying ? '⏸️ Pausar' : currentMinute === 30 ? '▶️ 2ª Parte' : '▶️ Iniciar'}
             </button>
 
             <button
               onClick={handleInstantSimulate}
               disabled={currentMinute >= 60}
-              className="rounded-xl border border-zinc-700 bg-zinc-800 px-4 py-2.5 text-xs font-semibold text-zinc-200 hover:bg-zinc-700 hover:text-white transition-all disabled:opacity-40"
+              className="flex-1 sm:flex-initial rounded-xl border border-zinc-700 bg-zinc-800 px-3 sm:px-4 py-2 sm:py-2.5 text-xs font-semibold text-zinc-200 hover:bg-zinc-700 hover:text-white transition-all disabled:opacity-40 text-center"
             >
-              ⚡ Resolver Rápido
+              ⚡ Resolver
             </button>
 
             <button
               onClick={handleOpenTimeout}
               disabled={timeoutsRemaining <= 0 || currentMinute >= 60 || currentMinute === 0}
-              className="rounded-xl border border-blue-500/30 bg-blue-500/10 px-3.5 py-2.5 text-xs font-semibold text-blue-300 hover:bg-blue-500/20 transition-all disabled:opacity-40"
+              className="flex-1 sm:flex-initial rounded-xl border border-blue-500/30 bg-blue-500/10 px-2.5 sm:px-3.5 py-2 sm:py-2.5 text-xs font-semibold text-blue-300 hover:bg-blue-500/20 transition-all disabled:opacity-40 text-center whitespace-nowrap"
             >
-              ⏱️ Time-Out ({timeoutsRemaining}/2)
+              ⏱️ Time-Out ({timeoutsRemaining})
             </button>
           </div>
 
           {/* Velocidades */}
-          <div className="flex items-center gap-1.5 text-xs">
-            <span className="text-zinc-500 text-[11px] mr-1">Velocidade:</span>
+          <div className="flex items-center justify-center gap-1 sm:gap-1.5 text-xs w-full sm:w-auto">
+            <span className="text-zinc-500 text-[10px] sm:text-[11px] mr-0.5 sm:mr-1">Vel:</span>
             {[
-              { label: 'Normal (1x)', ms: 500 },
-              { label: 'Elifoot (3x)', ms: 200 },
-              { label: 'Frenético (10x)', ms: 80 },
+              { label: '1x', ms: 500 },
+              { label: '3x (Rápido)', ms: 200 },
+              { label: '10x (Frenético)', ms: 80 },
             ].map((v) => (
               <button
                 key={v.label}
                 onClick={() => setSpeedMs(v.ms)}
-                className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-all ${
+                className={`rounded-lg px-2 sm:px-2.5 py-1 text-[11px] sm:text-xs font-medium transition-all ${
                   speedMs === v.ms
                     ? 'bg-zinc-800 text-white border border-zinc-700'
                     : 'text-zinc-500 hover:text-zinc-300'
@@ -425,19 +425,19 @@ export const MatchLiveViewer: React.FC<MatchLiveViewerProps> = ({
       )}
 
       {/* SEPARADORES DO JOGO */}
-      <div className="flex space-x-1 border-b border-zinc-800 pb-2">
+      <div className="flex space-x-1.5 overflow-x-auto scrollbar-none border-b border-zinc-800 pb-2 touch-pan-x">
         {[
-          { id: 'feed', label: `🎙️ Relato ao Vivo (${visibleEvents.length})` },
-          { id: 'substitutions', label: '🔄 Substituições em Direto' },
+          { id: 'feed', label: `🎙️ Relato (${visibleEvents.length})` },
+          { id: 'substitutions', label: '🔄 Substituições' },
           { id: 'stats', label: '📊 Estatísticas' },
-          { id: 'press', label: '📰 Sala de Imprensa' },
+          { id: 'press', label: '📰 Imprensa' },
         ].map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as typeof activeTab)}
-            className={`rounded-xl px-4 py-2 text-xs font-medium transition-all ${
+            className={`shrink-0 rounded-xl px-3 sm:px-4 py-2 text-xs font-medium whitespace-nowrap transition-all ${
               activeTab === tab.id
-                ? 'bg-zinc-800 text-white shadow-sm'
+                ? 'bg-zinc-800 text-white shadow-sm ring-1 ring-zinc-700'
                 : 'text-zinc-400 hover:text-zinc-200'
             }`}
           >

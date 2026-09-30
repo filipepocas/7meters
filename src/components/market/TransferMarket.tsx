@@ -224,7 +224,7 @@ export const TransferMarket: React.FC = () => {
       )}
 
       {/* Navegação por Segmentos Modernos */}
-      <div className="flex space-x-2 border-b border-zinc-800 pb-3">
+      <div className="flex space-x-2 overflow-x-auto scrollbar-none border-b border-zinc-800 pb-3 touch-pan-x">
         {[
           { id: 'free_agents', label: 'Jogadores Livres', count: freeAgents.length, icon: '🆓' },
           { id: 'club_market', label: 'Mercado de Clubes', count: clubMarketPlayers.length, icon: '🏢' },
@@ -235,7 +235,7 @@ export const TransferMarket: React.FC = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as typeof activeTab)}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold transition-all ${
+              className={`shrink-0 flex items-center gap-2 rounded-xl px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs font-semibold whitespace-nowrap transition-all ${
                 isActive
                   ? 'bg-amber-500 text-zinc-950 font-bold shadow-md shadow-amber-500/20'
                   : 'bg-zinc-900/60 text-zinc-400 hover:text-white hover:bg-zinc-800/80 border border-zinc-800/80'
@@ -254,7 +254,7 @@ export const TransferMarket: React.FC = () => {
       </div>
 
       {/* Filtros de Posição com Chips Limpos */}
-      <div className="flex flex-wrap gap-1.5 text-xs">
+      <div className="flex space-x-1.5 overflow-x-auto scrollbar-none pb-1 touch-pan-x text-xs">
         {[
           { id: 'TODAS', label: 'Todas as Posições' },
           { id: 'GR', label: 'Guarda-Redes' },
@@ -270,7 +270,7 @@ export const TransferMarket: React.FC = () => {
             <button
               key={pos.id}
               onClick={() => setSelectedPosition(pos.id as typeof selectedPosition)}
-              className={`rounded-lg px-3 py-1.5 font-medium transition-all text-xs ${
+              className={`shrink-0 rounded-lg px-2.5 sm:px-3 py-1.5 font-medium whitespace-nowrap transition-all text-xs ${
                 isSelected
                   ? 'bg-zinc-100 text-zinc-950 font-semibold shadow-sm'
                   : 'bg-zinc-900/60 text-zinc-400 hover:text-zinc-200 border border-zinc-800/60'
