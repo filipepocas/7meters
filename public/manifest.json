@@ -1,0 +1,31 @@
+{
+  "id": "/",
+  "name": "7meters - Handball Manager",
+  "short_name": "7meters",
+  "description": "Simulador e Gestor de Andebol Profissional tipo Elifoot com táticas, pavilhões reais e multiplayer.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#FACC15",
+  "theme_color": "#FACC15",
+  "icons": [
+    {
+      "src": "/pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

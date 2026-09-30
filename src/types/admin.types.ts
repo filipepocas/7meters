@@ -1,0 +1,61 @@
+/**
+ * 7meters - Admin Types
+ * Tipagem estrita para a Matriz Central de Regras e Eventos Dinâmicos do Painel de Admin.
+ * Suporta regras do tipo "Se [Condição] Então [Efeito] com [Coeficiente]" e o impacto
+ * de acontecimentos dentro e fora de campo.
+ */
+
+export type RuleCategory =
+  | 'tactics'          // Encaixes táticos, vantagens e desvantagens de sistemas
+  | 'stamina'          // Desgaste físico, fadiga de ombro e recuperação
+  | 'referee'          // Rigor da arbitragem, cartões e exclusões de 2 min
+  | 'goalkeeper'       // Eficácia de baliza e duelo direto nos 7 metros
+  | 'events_in_match'  // Incidentes em jogo (lesões rápidas, picardias, clima)
+  | 'events_off_match' // Incidentes fora de jogo (balneário, saúde, finanças, imprensa)
+  | 'randomness'       // Sorte/azar e imprevisibilidade humana
+  | 'financial';       // Bilheteira, custos operacionais do pavilhão e patrocínios
+
+export interface AdminRule {
+  id: string;
+  category: RuleCategory;
+  conditionCode: string;       // Identificador único (ex: 'shoulder_fatigue_penalty')
+  title: string;               // Nome amigável para exibição no painel
+  description: string;         // Explicação detalhada da regra
+  coefficientValue: number;    // O valor do coeficiente multiplicador/aditivo
+  minLimit: number;            // Limite mínimo de segurança editável
+  maxLimit: number;            // Limite máximo de segurança editável
+  isActive: boolean;
+  updatedAt: string;
+}
+
+export type EventOccurrenceType = 'in_match' | 'off_match';
+
+export interface DynamicGameEvent {
+  id: string;
+  type: EventOccurrenceType;
+  title: string;
+  descriptionText: string;
+  probabilityChance: number;   // Percentagem/Probabilidade de ocorrência (0.01% a 100%)
+
+  // Impactos Diretos Parametrizáveis
+  targetType: 'player' | 'staff' | 'club' | 'match_momentum';
+  impacts: {
+    attributeModifier?: {
+      attributeName: string;
+      valueChange: number;
+    };
+    staminaChange?: number;
+    moralChange?: number;
+    financialCostEuro?: number;
+    suspensionMatches?: number;
+    injuryDays?: number;
+    matchMomentumShift?: number; // Alteração na moral/ritmo da equipa no jogo
+  };
+}
+
+export interface SystemAdminState {
+  adminEmail: string;
+  isLoggedIn: boolean;
+  globalRules: AdminRule[];
+  registeredEventsPool: DynamicGameEvent[];
+}

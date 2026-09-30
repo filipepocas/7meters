@@ -1,0 +1,156 @@
+/**
+ * 7meters - Mystery Sponsor Generator
+ * Gerador de patrocinadores mistério com injeção de capital oculta.
+ * Fornece descrições enigmáticas de atividade, variação anual aleatória de valores
+ * e revelação diferida do financiamento injetado no clube.
+ */
+
+import { MysterySponsorOffer, Sponsor, SponsorType } from '../../types/sponsor.types';
+
+function getRandomInt(min: number, max: number): number {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+const SPONSOR_NAMES_POOL = [
+  'Vanguard Biotech', 'Aura Nexus Group', 'Solaria Energy Systems', 'Hyperion Dynamics',
+  'Krypton Logistics', 'Nebula Ventures', 'Titan Financial Corp', 'Chronos Watchmakers',
+  'Aether Telecom', 'Apex Mineral Group', 'Vortex Robotics', 'Helios Distilleries',
+  'Orion Maritime', 'Quantum Tech Solutions', 'Atlas Heavy Industries', 'Zenith Real Estate',
+  'Argus Security Systems', 'Elysium Hotel Chain', 'Pinnacle Agritech', 'AeroMotion Global',
+  'Pulse Nutrition', 'Borealis Pharma', 'CyberGrid Networks', 'Ignis Foundry',
+  'Valence Chemical', 'Oasis Bottling Co.', 'Starlight Entertainment', 'Velocity Motors',
+  'Meridian Shipping', 'Lumina Optical Systems'
+];
+
+const ENIGMATIC_DESCRIPTIONS = [
+  'Conglomerado internacional focado na exportação de tecnologias emergentes. Os seus relatórios de receita são confidenciais, mas circulam rumores de investimentos avultados no desporto nacional.',
+  'Pequena startup de investimento de alto risco. A sua sede oficial é num paraíso fiscal e a capacidade financeira flutua mensalmente de forma imprevisível.',
+  'Líder em soluções industriais de reciclagem avançada. O seu balanço anual é sólido, com um orçamento de publicidade corporativa constante.',
+  'Empresa familiar fundada na década de 80. Mantém uma postura discreta no mercado, mas apoia tradicionalmente clubes desportivos locais com somas surpreendentes.',
+  'Grupo financeiro multinacional com presença em 14 países. O contrato exige visibilidade no pavilhão, oferecendo em troca uma injeção de liquidez cujo montante é mantido em segredo até à assinatura.',
+  'Consultora em inteligência artificial e análise de dados. Promete retornos astronómicos, embora alguns parceiros anteriores relatem flutuações acentuadas nos pagamentos.',
+  'Consórcio imobiliário em expansão na Europa do Sul. O orçamento de patrocínio depende do fecho do próximo empreendimento imobiliário.',
+  'Marca de bebidas energéticas direcionada para a juventude. Apresenta uma imagem agressiva de marketing com orçamentos de patrocínio muito dinâmicos.',
+  'Fundo privado de investimento desportivo. Sabe-se que financia equipas com grande injeção imediata de capital, mas exige metas desportivas exigentes.',
+  'Fornecedor de logística marítima e transporte pesado. A sua atividade é altamente lucrativa, embora prefira manter um perfil discreto junto do público.'
+];
+
+const LOGO_PLACEHOLDERS = [
+  'https://images.unsplash.com/photo-1599305445671-ac291c95aaa9?w=150',
+  'https://images.unsplash.com/photo-1516876437184-593fda40c7ce?w=150',
+  'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=150',
+  'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150',
+  'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=150',
+];
+
+const HINT_CATEGORIES: ('Muito Baixo' | 'Baixo' | 'Moderado' | 'Elevado' | 'Gigante' | 'Incerto')[] = [
+  'Muito Baixo', 'Baixo', 'Moderado', 'Elevado', 'Gigante', 'Incerto'
+];
+
+/**
+ * Gera uma proposta individual de patrocinador mistério com tier.
+ */
+export function generateMysterySponsorCard(tier = 'Nacional'): Sponsor {
+  const name = SPONSOR_NAMES_POOL[getRandomInt(0, SPONSOR_NAMES_POOL.length - 1)];
+  const desc = ENIGMATIC_DESCRIPTIONS[getRandomInt(0, ENIGMATIC_DESCRIPTIONS.length - 1)];
+  const logo = LOGO_PLACEHOLDERS[getRandomInt(0, LOGO_PLACEHOLDERS.length - 1)];
+
+  const basePayout = tier === 'Internacional' ? getRandomInt(80, 300) * 1000 : tier === 'Cripto / Tech' ? getRandomInt(50, 450) * 1000 : getRandomInt(25, 150) * 1000;
+  const weekly = Math.round(basePayout * 0.03);
+
+  const sponsor: Sponsor = {
+    id: `spn_card_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+    name: `${name} ${tier}`,
+    companyName: `${name} ${tier}`,
+    type: 'Principal',
+    tier,
+    logoUrl: logo,
+    activityDescription: desc,
+    isRevealed: false,
+    payoutAmount: undefined,
+    weeklyPayout: weekly,
+    weeklyAmount: weekly,
+    seasonBonus: Math.round(basePayout * 0.2),
+    contractYears: 1,
+    contractWeeks: 26,
+    minimumReputation: 20,
+  };
+
+  (sponsor as unknown as { _hiddenPayout: number })._hiddenPayout = basePayout;
+
+  return sponsor;
+}
+
+/**
+ * Gera uma lista de propostas de patrocinadores mistério para a época atual.
+ */
+export function generateMysterySponsorsCatalog(clubReputation: number, count = 15): MysterySponsorOffer[] {
+  const offers: MysterySponsorOffer[] = [];
+  const types: SponsorType[] = ['Principal', 'Secundário', 'Equipamento', 'Estádio'];
+
+  for (let i = 0; i < count; i++) {
+    const name = SPONSOR_NAMES_POOL[getRandomInt(0, SPONSOR_NAMES_POOL.length - 1)];
+    const description = ENIGMATIC_DESCRIPTIONS[getRandomInt(0, ENIGMATIC_DESCRIPTIONS.length - 1)];
+    const logoUrl = LOGO_PLACEHOLDERS[getRandomInt(0, LOGO_PLACEHOLDERS.length - 1)];
+    const type = types[getRandomInt(0, types.length - 1)];
+
+    const baseMultiplier = clubReputation / 10;
+    const payoutAmount = Math.round(getRandomInt(15, 250) * 1000 * (0.8 + baseMultiplier * 0.1));
+    const weeklyPayout = Math.round(payoutAmount * 0.02);
+    const seasonBonus = Math.round(payoutAmount * 0.15);
+
+    const hint = HINT_CATEGORIES[getRandomInt(0, HINT_CATEGORIES.length - 1)];
+
+    const sponsor: Sponsor = {
+      id: `spn_myst_${Date.now()}_${i}_${Math.random().toString(36).substring(2, 7)}`,
+      name: `${name} #${getRandomInt(10, 99)}`,
+      companyName: `${name} #${getRandomInt(10, 99)}`,
+      type,
+      tier: 'Nacional',
+      logoUrl,
+      activityDescription: description,
+      isRevealed: false,
+      payoutAmount: undefined,
+      weeklyPayout,
+      weeklyAmount: weeklyPayout,
+      seasonBonus,
+      contractYears: 1,
+      contractWeeks: 24,
+      minimumReputation: Math.max(10, clubReputation - getRandomInt(10, 30)),
+    };
+
+    (sponsor as unknown as { _hiddenPayout: number })._hiddenPayout = payoutAmount;
+
+    offers.push({
+      sponsor,
+      estimatedPotentialHint: hint,
+    });
+  }
+
+  return offers;
+}
+
+/**
+ * Confirma e assina o contrato com um patrocinador mistério,
+ * revelando o montante exato e injetando o capital inicial no saldo do clube.
+ */
+export function confirmSponsorContract(
+  sponsor: Sponsor,
+  clubBudget: number
+): { updatedSponsor: Sponsor; injectedAmount: number; newBudget: number } {
+  const hiddenPayout = (sponsor as unknown as { _hiddenPayout?: number })._hiddenPayout || getRandomInt(30, 180) * 1000;
+
+  const updatedSponsor: Sponsor = {
+    ...sponsor,
+    isRevealed: true,
+    payoutAmount: hiddenPayout,
+  };
+
+  const newBudget = clubBudget + hiddenPayout;
+
+  return {
+    updatedSponsor,
+    injectedAmount: hiddenPayout,
+    newBudget,
+  };
+}

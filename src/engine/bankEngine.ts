@@ -1,0 +1,244 @@
+/**
+ * 7meters - Bank & Loan Engine (BCP)
+ * Gestor do sistema financeiro bancário: avaliação de score de crédito,
+ * aprovação de empréstimos, gestão de dívida, salários em atraso e
+ * processo de penhora/leilão de jogadores ao fim da época em caso de insolvência.
+ */
+
+import { Club } from '../types/club.types';
+import { ActiveBankLoan, BankLoanOffer, PlayerForeclosureRecord } from '../types/finance.types';
+import { Player } from '../types/player.types';
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
+}
+
+/**
+ * Calcula o valor estimado de mercado de um jogador com base na sua qualidade, idade e contrato.
+ */
+export function calculatePlayerMarketValue(player: Player): number {
+  const baseValue = (player.qualityRating || 5) * 15000;
+  const ageFactor = player.age < 23 ? 1.3 : player.age > 32 ? 0.7 : 1.0;
+  const isGK = player.position === 'Guarda-Redes' || (player.position as string) === 'GR';
+  const positionFactor = isGK ? 1.1 : 1.0;
+  return Math.round(baseValue * ageFactor * positionFactor);
+}
+
+/**
+ * Avalia o Score de Crédito do clube (0 a 100) com base no valor dos seus ativos,
+ * reputação e orçamento atual.
+ */
+export function calculateClubCreditScore(club: Club, squad: Player[]): number {
+  const squadTotalValue = squad.reduce((acc, p) => acc + (p.marketValue || calculatePlayerMarketValue(p)), 0);
+  const budgetScore = club.budget > 0 ? Math.min(30, Math.floor(club.budget / 10000)) : -20;
+  const reputationScore = Math.min(40, Math.floor(club.reputation / 2.5));
+  const assetScore = Math.min(30, Math.floor(squadTotalValue / 50000));
+
+  const totalScore = 30 + budgetScore + reputationScore + assetScore;
+  return clamp(totalScore, 0, 100);
+}
+
+/**
+ * Gera uma proposta de empréstimo bancário adaptada à saúde financeira do clube.
+ */
+export function generateBankLoanProposal(
+  club: Club,
+  squad: Player[],
+  requestedAmount: number,
+  durationWeeks = 24
+): BankLoanOffer {
+  const creditScore = calculateClubCreditScore(club, squad);
+  const squadTotalValue = squad.reduce((acc, p) => acc + (p.marketValue || calculatePlayerMarketValue(p)), 0);
+  const maxBorrowingCapacity = Math.round((squadTotalValue * 0.4) + (club.reputation * 2000));
+
+  const loanId = `loan_prop_${Date.now()}_${club.id}`;
+
+  if (creditScore < 25) {
+    return {
+      loanId,
+      maxAmountAllowed: maxBorrowingCapacity,
+      interestRate: 0.15,
+      durationWeeks,
+      weeklyPayment: 0,
+      approvalStatus: 'recusado',
+      rejectionReason: 'Risco de crédito extremamente elevado. Histórico financeiro e património insuficientes.',
+    };
+  }
+
+  if (requestedAmount > maxBorrowingCapacity) {
+    return {
+      loanId,
+      maxAmountAllowed: maxBorrowingCapacity,
+      interestRate: 0.12,
+      durationWeeks,
+      weeklyPayment: 0,
+      approvalStatus: 'recusado',
+      rejectionReason: `Montante solicitado (€${requestedAmount.toLocaleString()}) excede a capacidade máxima de endividamento (€${maxBorrowingCapacity.toLocaleString()}).`,
+    };
+  }
+
+  const interestRate = Number((0.14 - (creditScore / 100) * 0.09).toFixed(3));
+  const totalAmountToRepay = requestedAmount * (1 + interestRate);
+  const weeklyPayment = Math.round(totalAmountToRepay / durationWeeks);
+
+  return {
+    loanId,
+    maxAmountAllowed: maxBorrowingCapacity,
+    interestRate,
+    durationWeeks,
+    weeklyPayment,
+    approvalStatus: 'aprovado',
+  };
+}
+
+/**
+ * Converte uma proposta aprovada num empréstimo ativo e injeta o capital no clube.
+ */
+export function acceptBankLoan(club: Club, offer: BankLoanOffer, requestedAmount: number): { updatedClub: Club; newLoan: ActiveBankLoan } {
+  const totalRepay = requestedAmount * (1 + offer.interestRate);
+  const weeklyInstallment = Math.round(totalRepay / offer.durationWeeks);
+
+  const newLoan: ActiveBankLoan = {
+    id: `loan_act_${Date.now()}_${club.id}`,
+    originalAmount: requestedAmount,
+    remainingAmount: Math.round(totalRepay),
+    weeklyInstallment,
+    interestRate: offer.interestRate,
+    weeksRemaining: offer.durationWeeks,
+    issuedAtWeek: 1,
+  };
+
+  const updatedClub: Club = {
+    ...club,
+    budget: club.budget + requestedAmount,
+  };
+
+  return { updatedClub, newLoan };
+}
+
+/**
+ * Processa o pagamento semanal de amortização do empréstimo bancário.
+ */
+export function processWeeklyLoanPayment(
+  club: Club,
+  activeLoan: ActiveBankLoan
+): { updatedClub: Club; updatedLoan: ActiveBankLoan; paymentSuccessful: boolean } {
+  const installment = activeLoan.weeklyInstallment;
+
+  if (club.budget >= installment) {
+    const updatedClub: Club = {
+      ...club,
+      budget: club.budget - installment,
+    };
+
+    const remainingAmount = Math.max(0, activeLoan.remainingAmount - installment);
+    const weeksRemaining = Math.max(0, activeLoan.weeksRemaining - 1);
+
+    const updatedLoan: ActiveBankLoan = {
+      ...activeLoan,
+      remainingAmount,
+      weeksRemaining,
+    };
+
+    return { updatedClub, updatedLoan, paymentSuccessful: true };
+  } else {
+    return {
+      updatedClub: club,
+      updatedLoan: activeLoan,
+      paymentSuccessful: false,
+    };
+  }
+}
+
+/**
+ * Avalia a penalização nos jogadores caso o clube esteja com salários em atraso.
+ */
+export function applyFinancialDefaultPenalties(squad: Player[], unpaidWeeks: number): Player[] {
+  if (unpaidWeeks <= 0) return squad;
+
+  const moraleDrop = Math.min(40, unpaidWeeks * 10);
+  const energyPenalty = Math.min(25, unpaidWeeks * 5);
+
+  return squad.map((player) => ({
+    ...player,
+    energyLevel: Math.max(10, player.energyLevel - energyPenalty),
+    shooting: Math.max(1, player.shooting - Math.floor(moraleDrop / 15)),
+    defense: Math.max(1, player.defense - Math.floor(moraleDrop / 15)),
+    attributes: {
+      ...player.attributes,
+      shooting: Math.max(1, player.attributes.shooting - Math.floor(moraleDrop / 15)),
+      defense: Math.max(1, player.attributes.defense - Math.floor(moraleDrop / 15)),
+      pressureResistance: Math.max(1, player.attributes.pressureResistance - Math.floor(moraleDrop / 10)),
+    },
+  }));
+}
+
+/**
+ * Penhora de Jogadores em caso de saldo negativo persistente.
+ */
+export function executeSeasonEndForeclosure(
+  club: Club,
+  squad: Player[],
+  currentWeek: number
+): {
+  updatedClub: Club;
+  remainingSquad: Player[];
+  foreclosedPlayers: Player[];
+  foreclosureRecords: PlayerForeclosureRecord[];
+} {
+  if (club.budget >= 0) {
+    return {
+      updatedClub: club,
+      remainingSquad: squad,
+      foreclosedPlayers: [],
+      foreclosureRecords: [],
+    };
+  }
+
+  let debtToCover = Math.abs(club.budget);
+  const sortedSquad = [...squad].sort((a, b) => b.marketValue - a.marketValue);
+
+  const foreclosedPlayers: Player[] = [];
+  const foreclosureRecords: PlayerForeclosureRecord[] = [];
+  const remainingSquad: Player[] = [];
+
+  for (const player of sortedSquad) {
+    if (debtToCover > 0 && foreclosedPlayers.length < squad.length - 7) {
+      const marketVal = player.marketValue;
+      debtToCover -= marketVal;
+
+      const freeAgentPlayer: Player = {
+        ...player,
+        currentClubId: null,
+        clubId: null,
+      };
+
+      foreclosedPlayers.push(freeAgentPlayer);
+
+      foreclosureRecords.push({
+        playerId: player.id,
+        playerName: player.name,
+        marketValueAtForeclosure: marketVal,
+        debtAmountCleared: marketVal,
+        foreclosedAtWeek: currentWeek,
+      });
+    } else {
+      remainingSquad.push(player);
+    }
+  }
+
+  const updatedBudget = debtToCover < 0 ? Math.abs(debtToCover) : -debtToCover;
+
+  const updatedClub: Club = {
+    ...club,
+    budget: updatedBudget,
+    squadIds: remainingSquad.map((p) => p.id),
+  };
+
+  return {
+    updatedClub,
+    remainingSquad,
+    foreclosedPlayers,
+    foreclosureRecords,
+  };
+}

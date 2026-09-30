@@ -1,0 +1,6 @@
+{
+  "name": "7meters - Handball Manager",
+  "description": "Simulador e Gestor de Andebol Profissional com táticas, patrocínios mistério, crédito BCP, mercado de transferências e partidas em tempo real.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
